@@ -1,213 +1,277 @@
-/*
+// decode arguments
+//
+// Copyright (C) 1991 K.Abe
 
-  decode arguments
+// Copyright (C) 2025 TcbnErik
+//
+// This file is part of tracex.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-  Copyright (C) 1991 K.Abe
-
-*/
-
-#include <stdio.h>
-#include <string.h>
 #include <ctype.h>
 #include <jctype.h>
-#include "trace.h"
+#include <stdio.h>
+#include <string.h>
+
 #include "syscall.h"
+#include "trace.h"
 
-static void	decode_argument( int , void* , char* , System_call* , char* , int );
-static void	decode_argument_by_letter( char* , char* , void* );
-static void	disk( int , void* , char* );
+#ifdef ADDRESS_24BIT
+#define ADDRESS_MASK 0x00ffffff
+#else
+#define ADDRESS_MASK 0x1fffffff /* 060turbo */
+#endif
 
+static void decode_argument(int, void*, char*, System_call*, char*, int);
+static void decode_argument_by_letter(char*, char*, void*);
 
-static System_call	System_call_info[256];
+static System_call System_call_info[256];
 
+void Initialize_argument_information(void) {
+  int i;
 
-extern void	Initialize_argument_information()
-{
-    int	i;
+  for (i = 0; i < 256; i++) System_call_info[i].name = NULL;
 
-    for( i = 0 ; i < 256 ; i++ ) {
-	System_call_info[i].name = NULL;
+  for (i = 0; i < SYSTEM_CALL_TABLE_MAX; i++) {
+    int j = Human_system_call[i].number;
+
+    System_call_info[j].name = Human_system_call[i].name;
+    System_call_info[j].argletter = Human_system_call[i].argletter;
+
+#define SKIP_LEN 3 /* strlen ("v2_") */
+
+    if ((unsigned char)(j - 0x50) <= (0x7f - 0x50)) {
+      System_call_info[j + 0x30].name = Human_system_call[i].name + SKIP_LEN;
+      System_call_info[j + 0x30].argletter = Human_system_call[i].argletter;
     }
-
-    for( i = 0 ; i < sizeof( Human_system_call ) / sizeof( Human_system_call[0] ) ; i++ ) {
-	System_call_info[ Human_system_call[i].number ].name =
-	    Human_system_call[i].name;
-	System_call_info[ Human_system_call[i].number ].argletter =
-	    Human_system_call[i].argletter;
-    }
+  }
 }
 
+static void fatchk(int doscall, void* arg, char* argbuf) {
+  char* argletter;
 
-#define DECODE(first,info_name)\
-    decode_argument( *(first*)arg & 0xff, arg , argbuf ,\
-		     info_name##_call_info ,\
-		     #info_name ,\
-		     sizeof(info_name##_call_info)/sizeof(info_name##_call_info[0]))
+  strcpy(argbuf, System_call_info[doscall].name);
+  argbuf += strlen(argbuf);
 
-extern char	*Format_output( doscall , arg )
-int	doscall;
-void	*arg;
-{
-    static char argbuf[256];
+  argletter = "sp";
+  if (*(short*)(arg + 4) < 0) {
+    *argbuf++ = '{';
+    *argbuf++ = '2';
+    *argbuf++ = '}';
+    argletter = "spw";
+  }
 
-    if( doscall < 0 || doscall > 256 || System_call_info[ doscall ].name == NULL ) {
-	sprintf( argbuf , "dos(0x%x){UNDEFINED}" , doscall );
-	return argbuf;
-    }
-    switch( doscall ) {
-    case 0x0c:	/* kflush */
-	DECODE( short , Kflush );
-	break;
-    case 0x18:	/* hendsp */
-	DECODE( short , Hendsp );
-	break;
-    case 0x44:	/* ioctrl */
-	DECODE( short , Ioctrl );
-	break;
-    case 0x22:	/* knjctrl */
-	DECODE( long , Knjctrl );
-	break;
-    case 0x23:	/* conctrl */
-	DECODE( short , Conctrl );
-	break;
-    case 0x24:	/* keyctrl */
-	DECODE( short , Keyctrl );
-	break;
-    case 0x4b:	/* exec */
-	DECODE( short , Exec );
-	break;
-    case 0x55:	/* common */
-	DECODE( short , Common );
-	break;
-    case 0x5f:	/* getassign */
-	DECODE( short , Getassign );
-	break;
-    case 0xf3:	/* diskred */
-    case 0xf4:	/* diskwrt */
-	disk( doscall , arg , argbuf );
-	break;
-    default:
-	decode_argument( doscall , arg , argbuf  , System_call_info , "dos" , 256 );
-	break;
-    }
+  decode_argument_by_letter(argbuf, argletter, arg);
+}
+
+static void malloc2(int doscall, void* arg, char* argbuf) {
+  char* argletter;
+
+  strcpy(argbuf, System_call_info[doscall].name);
+  argbuf += strlen(argbuf);
+
+  argletter = "wl";
+  if (*(short*)arg < 0) {
+    *argbuf++ = '{';
+    *argbuf++ = '2';
+    *argbuf++ = '}';
+    argletter = "wlp";
+  }
+
+  decode_argument_by_letter(argbuf, argletter, arg);
+}
+
+static void disk(int doscall, void* arg, char* argbuf) {
+  char* argletter;
+
+  strcpy(argbuf, System_call_info[doscall].name);
+  argbuf += strlen(argbuf);
+
+  argletter = "pwww";
+  if (*(short*)arg < 0) {
+    *argbuf++ = '{';
+    *argbuf++ = '2';
+    *argbuf++ = '}';
+    argletter = "pwll";
+  }
+
+  decode_argument_by_letter(argbuf, argletter, arg);
+}
+
+#define DECODE(first, info_name)                               \
+  decode_argument(                                             \
+      *(first*)arg & 0xff, arg, argbuf, info_name##_call_info, \
+      System_call_info[doscall].name,                          \
+      sizeof(info_name##_call_info) / sizeof(info_name##_call_info[0]))
+
+char* Format_output(int doscall, void* arg) {
+  static char argbuf[256];
+
+  if (doscall < 0 || 255 < doscall || System_call_info[doscall].name == NULL) {
+    sprintf(argbuf, "dos(%#x){UNDEFINED}", doscall);
     return argbuf;
+  }
+
+  switch (doscall) {
+    case 0x0c: /* kflush */
+      DECODE(short, Kflush);
+      break;
+    case 0x17: /* fatchk */
+      fatchk(doscall, arg, argbuf);
+      break;
+    case 0x18: /* hendsp */
+      DECODE(short, Hendsp);
+      break;
+    case 0x44: /* ioctrl */
+      DECODE(short, Ioctrl);
+      break;
+    case 0x22: /* knjctrl */
+      DECODE(long, Knjctrl);
+      break;
+    case 0x23: /* conctrl */
+      DECODE(short, Conctrl);
+      break;
+    case 0x24: /* keyctrl */
+      DECODE(short, Keyctrl);
+      break;
+    case 0x4b: /* exec */
+      DECODE(short, Exec);
+      break;
+    case 0x55: /* v2_common */
+      DECODE(short, v2Common);
+      break;
+    case 0x58: /* v2_malloc2 */
+    case 0x60: /* v2_malloc4 */
+    case 0x88: /* malloc2 */
+    case 0x90: /* malloc4 */
+      malloc2(doscall, arg, argbuf);
+      break;
+    case 0x5f: /* v2_assign */
+      DECODE(short, v2Assign);
+      break;
+    case 0x85: /* common */
+      DECODE(short, Common);
+      break;
+    case 0x8f: /* assign */
+      DECODE(short, Assign);
+      break;
+    case 0xb0: /* twon */
+      DECODE(short, Twon);
+      break;
+    case 0xb1: /* mvdir */
+      DECODE(short, Mvdir);
+      break;
+    case 0xf3: /* diskred */
+    case 0xf4: /* diskwrt */
+      disk(doscall, arg, argbuf);
+      break;
+    default:
+      decode_argument(doscall, arg, argbuf, System_call_info, "dos", 256);
+      break;
+  }
+  return argbuf;
 }
 
+static void decode_argument(int call, void* arg, char* buffer,
+                            System_call* info, char* name, int max) {
+  if (call >= max || info[call].name[0] == '\0') {
+    sprintf(buffer, "%s(%d){UNDEFINED}", name, call);
+    return;
+  }
 
-static void	escape( str , buffer )
-char	*str , *buffer;
-{
-    int	count;
-
-    if( str >= (char*)0x01000000 ) {
-	sprintf( buffer , "(0x%x)" , str );
-	buffer += strlen( buffer );
-	str = (char*)( (unsigned long)str & 0xffffff );
-    }
-
-    *buffer++ = '\"';
-    for( count = 0 ; *str && count < 32 ; str++ , count++ ) {
-	if( isprkana( *str ) )
-	    *buffer++ = *str;
-	else if( iscntrl( *str ) )
-	    sprintf( buffer , "\\x%x" , *str );
-	else if( iskanji( *str ) && iskanji2( *( str + 1 ) ) ) {
-	    *buffer++ = *str++;
-	    *buffer++ = *str;
-	    count++;
-	} else
-	    *buffer++ = '.';
-    }
-    *buffer++ = '\"';
-    if( *str ) {
-	*buffer++ = '.';
-	*buffer++ = '.';
-    }
-    *buffer++ = '\0';
-
+  strcpy(buffer, info[call].name);
+  decode_argument_by_letter(buffer + strlen(buffer), info[call].argletter, arg);
 }
 
+/* 文字列(またはアドレス)を表示する */
+static void escape(char* str, char* buffer) {
+  unsigned char* p = str;
+  int count;
 
-static void	decode_argument( call , arg , buffer , info , name , max )
-int		call;
-void		*arg;
-char		*buffer;
-System_call	*info;
-char		*name;
-int		max;
-{
-    if( call >= max || info[ call ].name[0] == '\0' ) {
-	sprintf( buffer , "%s(%d){UNDEFINED}" , name , call );
-	return;
-    }
-    strcpy( buffer ,  info[ call ].name );
-    decode_argument_by_letter( buffer + strlen( buffer ) , info[ call ].argletter , arg );
-}
+  if (p > (unsigned char*)ADDRESS_MASK) {
+    buffer += sprintf(buffer, "(%#x)", (unsigned int)p);
+    p = (unsigned char*)((unsigned long)p & ADDRESS_MASK);
+  }
 
-
-static void	decode_argument_by_letter( buffer , argletter , arg )
-char	*buffer;
-char	*argletter;
-void	*arg;
-{
-    char temp[256];
-    *buffer++ = '(';
-
-    while( *argletter ) {
-	switch( *argletter ) {
-	case 'w':
-	    sprintf( buffer , "%d" , *(short*)arg );
-	    if( *(unsigned short*)arg >= 10 ) {
-		buffer += strlen( buffer );
-		sprintf( buffer , "(0x%x)" , *(short*)arg & 0xffff );
-	    }
-	    arg += 2;
-	    break;
-	case 'l':
-	    sprintf( buffer , "%d" , *(long*)arg );
-	    if( *(long*)arg >= 10 ) {
-		buffer += strlen( buffer );
-		sprintf( buffer , "(0x%x)" , *(long*)arg );
-	    }
-	    arg += 4;
-	    break;
-	case 'p':
-	    sprintf( buffer , "0x%x" , *(long*)arg );
-	    arg += 4;
-	    break;
-	case 's':
-	    escape( *(long*)arg , temp );
-	    sprintf( buffer , "%s" , temp );
-	    arg += 4;
-	    break;
-	default:
-	    goto exit;
-	}
-	buffer += strlen( buffer );
-	if( *++argletter )
-	    *buffer++ = ',';
-    }
- exit:
-    *buffer++ = ')';
-    *buffer = '\0';
-}
-
-
-static void	disk( doscall , arg , argbuf )
-int	doscall;
-void	*arg;
-char	*argbuf;
-{
-    char	*argletter;
-
-    strcpy( argbuf ,  System_call_info[ doscall ].name );
-    argbuf += strlen( argbuf );
-    if( *(char*)arg & 0x80 ) {
-	strcpy( argbuf , "{2}" );
-	argbuf += strlen( argbuf );
-	argletter = "pwll";
+  *buffer++ = '\"';
+  for (count = 0; *p && count < 32; p++, count++) {
+    if (isprkana(*p))
+      *buffer++ = *p;
+    else if (iscntrl(*p))
+      buffer += sprintf(buffer, "\\x%02x", *p);
+    else if (iskanji(p[0]) && iskanji2(p[1])) {
+      *buffer++ = *p++;
+      *buffer++ = *p;
+      count++;
     } else
-	argletter = "pwww";
+      *buffer++ = '.';
+  }
+  *buffer++ = '\"';
 
-    decode_argument_by_letter( argbuf , argletter , arg );
+  if (*p) {
+    *buffer++ = '.';
+    *buffer++ = '.';
+  }
+  *buffer++ = '\0';
 }
+
+static void decode_argument_by_letter(char* buffer, char* argletter,
+                                      void* arg) {
+  char temp[256];
+
+  *buffer++ = '(';
+
+  while (*argletter) {
+    switch (*argletter++) {
+      case 'w': /* ワード値 */
+        buffer += sprintf(buffer, "%d", *(short*)arg);
+        if (*(unsigned short*)arg >= 10)
+          buffer += sprintf(buffer, "(%#x)", *(short*)arg & 0xffff);
+        arg += 2;
+        break;
+      case 'l': /* ロングワード値 */
+        buffer += sprintf(buffer, "%d", *(int*)arg);
+        if (*(long*)arg >= 10) buffer += sprintf(buffer, "(%#x)", *(int*)arg);
+        arg += 4;
+        break;
+      case 'p': /* ポインタ */
+        if ((void*)*(long*)arg)
+          buffer += sprintf(buffer, "%#x", *(int*)arg);
+        else {
+          *buffer++ = 'N'; /* "NULL" */
+          *buffer++ = 'U';
+          *buffer++ = 'L';
+          *buffer++ = 'L';
+        }
+        arg += 4;
+        break;
+      case 's': /* 文字列 */
+        escape((char*)*(long*)arg, temp);
+        /* buffer += sprintf (buffer, "%s", temp); */
+        strcpy(buffer, temp);
+        buffer += strlen(buffer);
+        arg += 4;
+        break;
+      default:
+        goto exit;
+    }
+
+    if (*argletter) *buffer++ = ','; /* まだ引数がある */
+  }
+exit:
+  *buffer++ = ')';
+  *buffer = '\0';
+}
+
+/* EOF */

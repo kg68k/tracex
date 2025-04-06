@@ -1,87 +1,145 @@
-/*
+// display doscall name, arguments, result code (called from New_handler)
+//
+// Copyright (C) 1991 K.Abe
 
-  display doscall name, arguments, result code
-  ( called from New_handler )
-
-  Copyright (C) 1991 K.Abe
-
-*/
+// Copyright (C) 2025 TcbnErik
+//
+// This file is part of tracex.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <stdio.h>
-#include <iocslib.h>
-#include "trace.h"
+#include <unistd.h>
+
 #include "error.h"
+#include "trace.h"
 
-extern void	display2( int , int );
-static void	indent( void );
+#define CSRX (unsigned short *)(0x974)
+#define WAIT (int *)(0x1cae)
 
-static char	*Formatted_string;
-static int	Flush_flag = 1;
-static int	Doscall_nestlevel = 0;
-static int	Last_instruction_not_return = 0;
+static void indent(void);
 
+static char *Formatted_string;
+static int exec_level = -1;
+static int Doscall_nestlevel = 0;
+static char Last_instruction_not_return = 0;
+static char exec_flag = 0;
+static char Flush_flag = 1;
 
-extern void	display1( callnum , arg )
-int	callnum;
-void	*arg;
-{
-    callnum &= 0xff;
+extern void display1(int callnum, void *arg) {
+  callnum &= 0xff;
 
-    if( Flush_flag == 0 ) {
-	display2( 0 , 1 );
-	Doscall_nestlevel++;
+  if (Flush_flag == 0) {
+    /* 再帰か終了系コール直後の返値相当の文字は次のコールで表示する */
+
+    if (Option_A_flag || 1 == exec_flag) {
+      indent();
+      fputs(Formatted_string, Stream);
     }
-    Formatted_string = Format_output( callnum , arg );
-    Flush_flag = 0;
-    Count++;
-    if( callnum == 0 || callnum == 0x4c || callnum == 0x31 ) {
-	Last_instruction_not_return = 1;
-	Doscall_nestlevel--;
-    } else
-	Last_instruction_not_return = 0;
-}
 
+    if (Last_instruction_not_return) {
+      fputs("=?\n", Stream);
 
-extern void	display2( result , result_unknown )
-int	result;
-int	result_unknown;
-{
-    if( isatty( fileno( Stream ) ) && ( B_LOCATE( -1 , -1 ) & 0xffff0000 ) != 0 )
-	putc( '\n' , Stream );
+      if (!Option_A_flag && 1 == exec_flag && 0 == Doscall_nestlevel)
+        exec_flag = 2;
+      else
+        Doscall_nestlevel--;
 
-    if( Flush_flag )
-	Doscall_nestlevel--;
+      if (Option_A_flag || 1 == exec_flag) {
+        int wait = *WAIT;
 
-    indent();
-    if( Flush_flag )
-	putc( '}' , Stream );
-    else
-	fputs( Formatted_string , Stream );
+        indent();
 
-    putc( '=' , Stream );
-    if( result_unknown ) {
-	if( Last_instruction_not_return )
-	    putc( '?' , Stream );
-	else
-	    putc( '{' , Stream );
+        if ((unsigned long)wait < 10)
+          fprintf(Stream, "}=%d\n", wait);
+        else
+          fprintf(Stream, "}=%d(%#x)\n", wait, wait);
+      }
     } else {
-	fprintf( Stream , "%d" , result );
-	if( (unsigned long)result >= 10 )
-	    fprintf( Stream , "(0x%x)" , result );
-	if( ERROR_NUMBER_MIN <= result && result < 0 )
-	    fprintf( Stream , "(%s)" , Human_error_message[ -result ] );
+      if (Option_A_flag || 1 == exec_flag) fputs("={\n", Stream);
+      Doscall_nestlevel++;
     }
+  }
 
-    putc( '\n' , Stream );
-    Flush_flag = 1;
+  Formatted_string = Format_output(callnum, arg);
+
+  Last_instruction_not_return =
+      (callnum == 0 || callnum == 0x4c || callnum == 0x31);
+
+  if (callnum == 0x4b && (*(short *)arg == 0 || *(short *)arg == 4))
+    exec_level = Doscall_nestlevel;
+
+  if (Option_A_flag || 1 == exec_flag) Count++;
+
+  if (isatty(fileno(Stream))) fflush(Stream);
+
+  Flush_flag = 0; /* DOSコール実行中は 0 */
 }
 
+extern void display2(int result) {
+  if (Flush_flag) Doscall_nestlevel--;
 
-static void	indent()
-{
-    int	i;
-    for( i = 0 ; i < Doscall_nestlevel ; i++ ) {
-	putc( ' ' , Stream );
-	putc( ' ' , Stream );
+  if (Option_A_flag || 1 == exec_flag) {
+    indent();
+
+    if (Flush_flag)
+      putc('}', Stream);
+    else
+      fputs(Formatted_string, Stream);
+
+    fprintf(Stream, "=%d", result);
+    if ((unsigned long)result >= 10) fprintf(Stream, "(%#x)", result);
+
+    if (result < 0)
+      if (ERROR_NUMBER_MIN <= result || result == -80)
+        fprintf(Stream, "(%s)",
+                Human_error_message[(result == -80) ? 0 : -result]);
+
+    putc('\n', Stream);
+  }
+
+  if (exec_level == Doscall_nestlevel) {
+    if (result >= 0) {
+      if (Option_A_flag || 1 == exec_flag) {
+        indent();
+        fputs("EXEC()={\n", Stream);
+      }
+      if (!Option_A_flag && 0 == exec_flag)
+        exec_flag = 1;
+      else
+        Doscall_nestlevel++;
     }
+
+    exec_level = -1;
+  }
+
+  Flush_flag = 1;
 }
+
+static void indent() {
+  int i;
+
+  if (isatty(fileno(Stream))) {
+    fflush(Stream);
+    if (*CSRX != 0) putc('\n', Stream);
+  }
+
+  for (i = Doscall_nestlevel; i; i--) {
+    putc(' ', Stream);
+    putc(' ', Stream);
+  }
+  /*  fprintf( Stream , "<%d>" , Doscall_nestlevel ); */
+}
+
+/* EOF */

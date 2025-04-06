@@ -1,130 +1,114 @@
-/*
+// System call tracer
+//
+// Copyright (C)1991 K.Abe
 
-  System call tracer
-
-  Copyright (C) 1991 K.Abe
-
-*/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <process.h>
-#include <doslib.h>
+// Copyright (C) 2025 TcbnErik
+//
+// This file is part of tracex.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "trace.h"
 
-#define	FLINE_TRAP_VECTOR	11
+#include <process.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-typedef void (*handler)(void);
+static int usage(void);
 
-static volatile void	usage( void );
-static void		trace( const char* , const char** );
-static void		setup_doscall_handler( void );
-static void		restore_doscall_handler( void );
-static void		convert_slash_to_backslash( char* );
+FILE* Stream = stdout;
+int Count;
+char Option_A_flag;
 
+#ifdef CONV_SLASH
+static void convert_slash_to_backslash(char* s) {
+  while (*s) {
+    if (*s == (char)'/') *s = '\\';
+  }
+}
+#endif
 
-static char	*Myname;
-extern void	New_handler( void );
+static int trace(const char* command_name, const char* command_argv[]) {
+  int rc;
 
-handler	Old_handler;
-FILE	*Stream;
-int	Count = 0;
+  setup_doscall_handler();
+  rc = spawnvp(P_WAIT, command_name, (void*)command_argv);
+  restore_doscall_handler();
 
+  if (rc == -1) {
+    perror("spawnvp");
+    return 1;
+  }
 
-static volatile void	usage()
-{
-    fprintf( stderr , "DOS call tracer version 0.1 Copyright (C) 1991 K.Abe\n" );
-    fprintf( stderr , "Usage: %s [-o file] command arg ...\n" , Myname );
-    exit(1);
+  fprintf(Stream, "\nExit code %d (%d System Calls)\n", rc, Count);
+  return 0;
 }
 
+int main(int argc, char* argv[]) {
+  char* command_name;
+  char** command_argv;
+  char* ofile = getenv("TRACE_LOG");
+  int i;
 
-extern int	main( argc , argv )
-int	argc;
-char	*argv[];
-{
-    char	*command_name;
-    char	**command_argv;
-    char	*ofile = NULL;
-    int		i;
+  if (argc <= 1) return usage();
 
-    Myname = argv[0];
-    if( argc <= 1 )
-	usage();
-
-    for( i = 1 ; i < argc && argv[i][0] == '-' ; i++ ) {
-	switch( argv[i][1] ) {
-	case 'o':
-	    if( argv[i][2] )
-		ofile = argv[i] + 2;
-	    else
-		ofile = argv[i++ + 1];
-	    break;
-	default:
-	    usage();
-	    break;
-	}
+  for (i = 1; i < argc && argv[i][0] == '-'; i++) {
+    switch (argv[i][1]) {
+      case 'o':
+        if (argv[i][2])
+          ofile = argv[i] + 2;
+        else
+          ofile = argv[++i];
+        break;
+      case 'a':
+        Option_A_flag = -1;
+        if (argv[i][2] == 'o') {
+          if (argv[i][3])
+            ofile = argv[i] + 3;
+          else
+            ofile = argv[++i];
+        }
+        break;
+      default:
+        return usage();
     }
-    if( ofile != NULL ) {
-	if( ( Stream = fopen( ofile , "wt" ) ) == NULL ) {
-	    perror( "fopen" );
-	    exit(1);
-	}
-    } else
-	Stream = stdout;
+  }
+  if (argc <= i) return usage();
 
-    Initialize_argument_information();
-    command_name = argv[i];
-    command_argv = &argv[i];
-    convert_slash_to_backslash( command_name );
-    trace( command_name , command_argv );
-    return 0;
-}
+  check_human_version();
 
-
-static void	trace( command_name , command_argv )
-const char	*command_name;
-const char	**command_argv;
-{
-    int		rc;
-
-    setup_doscall_handler();
-    rc = spawnvp( P_WAIT , command_name , command_argv );
-    restore_doscall_handler();
-    if( rc == -1 ) {
-	perror( "spawnvp" );
-	exit(1);
+  if (ofile && !(ofile[0] == (char)'-' && ofile[1] == (char)'\0')) {
+    if ((Stream = fopen(ofile, "w")) == NULL) {
+      perror("fopen");
+      return 1;
     }
-    fprintf( Stream , "Exit code %d (%d System Calls)\n" , rc , Count );
+  }
+
+  Initialize_argument_information();
+  command_name = argv[i];
+  command_argv = &argv[i];
+#ifdef CONV_SLASH
+  convert_slash_to_backslash(command_name);
+#endif
+  return trace(command_name, (void*)command_argv);
 }
 
+static int usage(void) {
+  printf(
+      "%s\n"
+      "Usage: trace [-a] [-o file] command arg ...",
+      Title);
 
-static void	setup_doscall_handler()
-{
-    Old_handler = INTVCS( FLINE_TRAP_VECTOR , New_handler );
-}
-
-
-static void	restore_doscall_handler()
-{
-    long	usp;
-
-    /* INTVCS( FLINE_TRAP_VECTOR , Old_handler ); do not work
-       because New_handler changes FLINE_TRAP_VECTOR to New_handler after INTVCS().
-       so, we must change FLINE_TRAP_VECTOR directly. */
-
-    usp = SUPER(0);
-    *(handler*)( FLINE_TRAP_VECTOR * 4 ) = Old_handler;
-    SUPER( usp );
-}
-
-
-static void	convert_slash_to_backslash( command_name )
-char	*command_name;
-{
-    for( ; *command_name ; command_name++ ) {
-	if( *command_name == '/' )
-	    *command_name = '\\';
-    }
+  return EXIT_FAILURE;
 }

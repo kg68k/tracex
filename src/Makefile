@@ -1,36 +1,27 @@
-# Makefile for trace
-# K.Abe
+# Makefile for tracex
 
-.PHONY:	all lzh ish
+AS = has060
+ASFLAGS = -w3
+CC = gcc2
+CFLAGS = -Wall -O2 -fall-bsr
 
-CFLAGS=-Wall -O -fstrength-reduce -fomit-frame-pointer -finline-functions\
-	-fall-bsr -fcombine-regs -fforce-mem -fforce-addr
 
-OBJS=trace.o handler.o argument.o display.o
+SRCS = trace.c argument.c display.c handler.s version.c
+OBJS = $(foreach f,$(SRCS),$(basename $(f)).o)
+TARGET = trace.x
 
-SRCS=trace.c argument.c display.c handler.s syscall.h error.h
 
-ARCHIVE_STUFF=README.DOC trace.1 trace.x trace_src.Lzh
+.PHONY : all
 
-all: trace.x
+all : $(TARGET)
 
-lzh: trace.Lzh
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o$@ $^
 
-trace.Lzh: $(ARCHIVE_STUFF)
-	xpack trace.x
-	lha u trace.Lzh $^
+handler.o : handler.s
+	$(AS) $(ASFLAGS) -o$@ $<
 
-trace_src.Lzh: $(SRCS) Makefile
-	lha u trace_src.Lzh $^
-
-ish: trace.Lzh
-	mic -s -o trace.Lzh
-	wc -l trace.ish
-
-trace.x: $(OBJS)
-	gcc -o trace.x -ldos -liocs $(OBJS)
-
-###
+trace.o: trace.h
 argument.o: trace.h syscall.h
 display.o: trace.h error.h
-trace.o: trace.h
+
