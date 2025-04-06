@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <iocslib.h>
 #include "trace.h"
-#include "error.inc"
+#include "error.h"
 
 extern void	display2( int , int );
 static void	indent( void );

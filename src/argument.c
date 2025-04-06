@@ -11,7 +11,7 @@
 #include <ctype.h>
 #include <jctype.h>
 #include "trace.h"
-#include "syscall.inc"
+#include "syscall.h"
 
 static void	decode_argument( int , void* , char* , System_call* , char* , int );
 static void	decode_argument_by_letter( char* , char* , void* );

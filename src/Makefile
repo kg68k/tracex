@@ -8,7 +8,7 @@ CFLAGS=-Wall -O -fstrength-reduce -fomit-frame-pointer -finline-functions\
 
 OBJS=trace.o handler.o argument.o display.o
 
-SRCS=trace.c argument.c display.c handler.s syscall.inc error.inc
+SRCS=trace.c argument.c display.c handler.s syscall.h error.h
 
 ARCHIVE_STUFF=README.DOC trace.1 trace.x trace_src.Lzh
 
@@ -31,6 +31,6 @@ trace.x: $(OBJS)
 	gcc -o trace.x -ldos -liocs $(OBJS)
 
 ###
-argument.o: trace.h syscall.inc
-display.o: trace.h error.inc
+argument.o: trace.h syscall.h
+display.o: trace.h error.h
 trace.o: trace.h
