@@ -1,0 +1,95 @@
+trace(1)                     USER COMMAND                     trace(1)
+
+
+【名前】
+    trace - Human の DOS CALL のトレース
+
+
+【使用法】
+    trace [-o filename] command arg ...
+
+
+【オプション】
+    -o filename  トレースの出力を filename に書き込みます。
+
+
+【説明】
+    trace は指定したコマンドの DOS CALL を監視し、DOS CALL 名、引数、
+    及び結果を標準出力( あるいは指定したファイル )に出力します。
+
+    trace の出力する行は DOS CALL 名、引数、リザルトコードです。
+
+    引数は引数の型によって表示されます。
+
+      word または long の引数は10進表記で、値が10よりも大きい場合はかっ
+      こつきの16進表記も付け加えられます。文字列へのポインタは引用符付
+      きの文字列で、先頭32byteが表示されます。それより長い場合には最後
+      の引用符の後に .. が付け加えられます。その他のポインタは16進数で
+      出力されます。
+  
+    リザルトコードは10進表記で、値が10よりも大きい場合はかっこ付きの
+    16進表記も付け加えられます。また、値が Human のエラーコードであれ
+    ば、その内容も付け加えられます。
+
+    Human が DOS CALL を実行中、Human自身が DOS CALL を発生させる場合
+    があります。このようなネストした DOS CALL の情報はインデントされて
+    表示され、もともと実行していた DOS CALL のリザルトコードはインデン
+    トを戻して表示されます。
+
+
+【例】
+    % trace ctime
+    exec{pathchk}(2,"ctime",0x2b3586,0x2b4e3e)={
+      files(0x65f6,"ctime.*",32(0x20))=-2(0xfffffffe)(No such file or directory)
+      files(0x65f6,"c:\bin\ctime.*",32(0x20))=-2(0xfffffffe)(No such file or directory)
+      files(0x65f6,"c:\usr\bin\ctime.*",32(0x20))=0
+      nfiles(0x65f6)=-2(0xfffffffe)(No such file or directory)
+    }=0
+    exec{loadexec}(0,"c:\usr\bin\ctime.x","",0x2b4e3e)={
+      open("c:\usr\bin\ctime.x",0)=8
+      read(8,0x6764,64(0x40))=64(0x40)
+      malloc(16777215(0xffffff))=-2128562736(0x8120b5d0)
+      malloc(2143696(0x20b5d0))=2901552(0x2c4630)
+      read(8,0x2c4720,4570(0x11da))=4570(0x11da)
+      close(8)=0
+      knjctrl[1](1,0)=0
+    }=2901792(0x2c4720)
+    setblock(0x2c4630,144116(0x232f4))=0
+    ioctrl{gt}(0,0)=32961(0x80c1)
+    ....
+
+
+【注記】
+    トレースの出力の最初の exec, 及び最後の super は trace 自身が発行
+    している DOS CALL です。
+
+    command の検索には環境変数 PATH を参照します。
+
+    リターンしてこない DOS CALL のリザルトコードは ? で表示されます。
+
+    トレースされているプログラムの子プロセスもトレースします。
+
+    トレースされているプログラムの実行は遅くなります。
+
+    最初の引数によって残りの引数が決定されるような DOS CALL は、DOS
+    CALL 名の後に {機能} または [番号] が付加されます。機能については 
+    doslib.h を参照して下さい。このような場合でも表示される引数は最初
+    の引数からです。
+
+
+【バグ】
+    子プロセス実行中( EXEC 中 )のトレースはインデントされているべきで
+    すが、そうなっていません。
+
+
+【SEE ALSO】
+    doslib.h, SHARP プログラーズマニュアル, etc.
+
+
+【作者】
+    k-abe@ics.osaka-u.ac.jp    ( junet )
+    Abechan@Nifty-Serve        PDC02373
+    Abechan@ぺけろく教         331
+
+
+trace(1)                     USER COMMAND                     trace(1)
