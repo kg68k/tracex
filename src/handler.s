@@ -28,11 +28,6 @@
 .xref _display1
 .xref _display2
 
-;LIBC
-.xref __iob
-.xref _exit
-.xref _fputs
-
 
 ;Human68k ver 3.02 以外で使用する場合はこれを変更すること。
 ;2.02,2.03(の一種類),3.01,3.02 以外は対応していない。
@@ -43,9 +38,6 @@
 STACK_SIZE: .equ 8192
 .fail (STACK_SIZE.lt.4096).or.(STACK_SIZE.and.%11)
 
-
-EXIT_FAILURE: .equ 1
-stderr: .reg __iob+36*2
 
 ;例外処理ベクタ
 PRIV_VEC:  .equ 8
@@ -182,23 +174,6 @@ not_doscall:
 ;使っているので、特権違反の方はフックしたままで良い。
 
 
-;extern void check_human_version( void );
-_check_human_version::
-	DOS	_VERNUM
-	cmpi	#HUMAN_VERSION,d0
-	beq	human_version_ok
-
-	pea	(version_error_message,pc)
-	bra	_error_exit
-
-;extern void error_exit( const char *format );
-_error_exit::
-	move.l	#stderr,(4,sp)
-	bsr	_fputs
-	pea	(EXIT_FAILURE)
-	bsr	_exit
-*	DOS	_EXIT
-
 ;extern void setup_doscall_handler( void );
 _setup_doscall_handler::
 	move	#FLINE_VEC,-(sp)
@@ -215,7 +190,6 @@ _setup_doscall_handler::
 	move.l	d0,(a0)+		;_Old_priv
 	bsr	intvcs_fline
 	move.l	d0,(a0)+		;_Old_fline
-human_version_ok:
 	rts
 
 ;extern void restore_doscall_handler( void );
@@ -237,9 +211,8 @@ intvcs_priv:
 
 .data
 
-version_error_message:
-	.dc.b	'trace: this version of human68k is not supported.',13,10,0
-	.even
+.even
+_SupportedHumanVersion:: .dc.w HUMAN_VERSION
 
 
 .bss

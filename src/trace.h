@@ -1,8 +1,6 @@
 #include <stdio.h>
 
 /* handler.s */
-extern void check_human_version(void);
-extern void error_exit(const char *);
 extern void setup_doscall_handler(void);
 extern void restore_doscall_handler(void);
 

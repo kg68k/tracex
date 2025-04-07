@@ -19,11 +19,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#define __DOS_INLINE__
+
 #include "trace.h"
 
 #include <process.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/dos.h>
+
+// handler.s
+extern unsigned short SupportedHumanVersion;
 
 static int usage(void);
 
@@ -78,12 +84,15 @@ int main(int argc, char* argv[]) {
   }
   if (argc <= i) return usage();
 
-  check_human_version();
+  if ((_dos_vernum() & 0xffff) != SupportedHumanVersion) {
+    fprintf(stderr, "trace: 対応していないHuman68kのバージョンです。\n");
+    return EXIT_FAILURE;
+  }
 
   if (ofile && !(ofile[0] == (char)'-' && ofile[1] == (char)'\0')) {
     if ((Stream = fopen(ofile, "w")) == NULL) {
       perror("fopen");
-      return 1;
+      return EXIT_FAILURE;
     }
   }
 
@@ -96,7 +105,7 @@ int main(int argc, char* argv[]) {
 static int usage(void) {
   printf(
       "%s\n"
-      "Usage: trace [-a] [-o file] command arg ...",
+      "Usage: trace [-a] [-o file] command arg ...\n",
       Title);
 
   return EXIT_FAILURE;
