@@ -19,21 +19,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#define __DOS_INLINE__
-
 #include "trace.h"
 
 #include <process.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef __HUMAN68K__
+#define __DOS_INLINE__
 #include <sys/dos.h>
+#else
+// Human68k以外のIDEでsys/dos.hがないという警告を消す細工
+extern int _dos_vernum(void);
+#endif
 
 // handler.s
 extern unsigned short SupportedHumanVersion;
 
 static int usage(void);
 
-FILE* Stream = stdout;
+FILE* Stream;
 int Count;
 char Option_A_flag;
 
@@ -58,6 +63,9 @@ int main(int argc, char* argv[]) {
   char** command_argv;
   char* ofile = getenv("TRACE_LOG");
   int i;
+
+  // 保存ファイル省略時は標準出力へ出力する
+  Stream = stdout;
 
   if (argc <= 1) return usage();
 
