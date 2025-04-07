@@ -31,14 +31,6 @@ FILE* Stream = stdout;
 int Count;
 char Option_A_flag;
 
-#ifdef CONV_SLASH
-static void convert_slash_to_backslash(char* s) {
-  while (*s) {
-    if (*s == (char)'/') *s = '\\';
-  }
-}
-#endif
-
 static int trace(const char* command_name, const char* command_argv[]) {
   int rc;
 
@@ -98,9 +90,6 @@ int main(int argc, char* argv[]) {
   Initialize_argument_information();
   command_name = argv[i];
   command_argv = &argv[i];
-#ifdef CONV_SLASH
-  convert_slash_to_backslash(command_name);
-#endif
   return trace(command_name, (void*)command_argv);
 }
 
