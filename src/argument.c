@@ -33,29 +33,41 @@
 #define ADDRESS_MASK 0x1fffffff /* 060turbo */
 #endif
 
-static void decode_argument(int, void*, char*, System_call*, char*, int);
-static void decode_argument_by_letter(char*, char*, void*);
+static void decode_argument(int call, const void* arg, char* buffer,
+                            const char* name, SystemCallSlice slice);
+static void decode_argument_by_letter(char* buffer, const char* argletter,
+                                      const void* arg);
 
-static System_call System_call_info[256];
+static SystemCall System_call_info[256];
 
 void Initialize_argument_information(void) {
+  const RawSystemCallSlice slice = get_raw_doscall_slice();
   int i;
 
   for (i = 0; i < 256; i++) System_call_info[i].name = NULL;
 
-  for (i = 0; i < SYSTEM_CALL_TABLE_MAX; i++) {
-    int j = Human_system_call[i].number;
+  for (i = 0; i < slice.length; i++) {
+    const RawSystemCall* call = &slice.array[i];
+    const int j = call->number;
 
-    System_call_info[j].name = Human_system_call[i].name;
-    System_call_info[j].argletter = Human_system_call[i].argletter;
+    System_call_info[j].name = call->name;
+    System_call_info[j].argletter = call->argletter;
 
 #define SKIP_LEN 3 /* strlen ("v2_") */
 
     if ((unsigned char)(j - 0x50) <= (0x7f - 0x50)) {
-      System_call_info[j + 0x30].name = Human_system_call[i].name + SKIP_LEN;
-      System_call_info[j + 0x30].argletter = Human_system_call[i].argletter;
+      System_call_info[j + 0x30].name = call->name + SKIP_LEN;
+      System_call_info[j + 0x30].argletter = call->argletter;
     }
   }
+}
+
+// _countof()
+#define C(array) (sizeof(array) / sizeof(array[0]))
+
+SystemCallSlice get_doscall_slice(void) {
+  SystemCallSlice slice = {C(System_call_info), System_call_info};
+  return slice;
 }
 
 static void fatchk(int doscall, void* arg, char* argbuf) {
@@ -109,11 +121,10 @@ static void disk(int doscall, void* arg, char* argbuf) {
   decode_argument_by_letter(argbuf, argletter, arg);
 }
 
-#define DECODE(first, info_name)                               \
-  decode_argument(                                             \
-      *(first*)arg & 0xff, arg, argbuf, info_name##_call_info, \
-      System_call_info[doscall].name,                          \
-      sizeof(info_name##_call_info) / sizeof(info_name##_call_info[0]))
+#define DECODE(first, info_name)                    \
+  decode_argument(*(first*)arg & 0xff, arg, argbuf, \
+                  System_call_info[doscall].name,   \
+                  get_##info_name##_call_slice())
 
 char* Format_output(int doscall, void* arg) {
   static char argbuf[256];
@@ -177,21 +188,22 @@ char* Format_output(int doscall, void* arg) {
       disk(doscall, arg, argbuf);
       break;
     default:
-      decode_argument(doscall, arg, argbuf, System_call_info, "dos", 256);
+      decode_argument(doscall, arg, argbuf, "dos", get_doscall_slice());
       break;
   }
   return argbuf;
 }
 
-static void decode_argument(int call, void* arg, char* buffer,
-                            System_call* info, char* name, int max) {
-  if (call >= max || info[call].name[0] == '\0') {
+static void decode_argument(int call, const void* arg, char* buffer,
+                            const char* name, SystemCallSlice slice) {
+  if (call >= slice.length || slice.array[call].name[0] == '\0') {
     sprintf(buffer, "%s(%d){UNDEFINED}", name, call);
     return;
   }
 
-  strcpy(buffer, info[call].name);
-  decode_argument_by_letter(buffer + strlen(buffer), info[call].argletter, arg);
+  strcpy(buffer, slice.array[call].name);
+  decode_argument_by_letter(buffer + strlen(buffer),
+                            slice.array[call].argletter, arg);
 }
 
 /* 文字列(またはアドレス)を表示する */
@@ -226,8 +238,8 @@ static void escape(char* str, char* buffer) {
   *buffer++ = '\0';
 }
 
-static void decode_argument_by_letter(char* buffer, char* argletter,
-                                      void* arg) {
+static void decode_argument_by_letter(char* buffer, const char* argletter,
+                                      const void* arg) {
   char temp[256];
 
   *buffer++ = '(';
