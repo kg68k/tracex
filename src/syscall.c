@@ -18,6 +18,8 @@
 
 #include "syscall.h"
 
+#include <stdio.h>
+
 // _countof()
 #define C(array) (sizeof(array) / sizeof(array[0]))
 
@@ -27,153 +29,292 @@
     return slice;                                                    \
   }
 
-static const RawSystemCall Human_system_call[] = {
-    {0x00, "exit", ""},
-    {0x01, "getchar", ""},
-    {0x02, "putchar", "w"},
-    {0x03, "cominp", ""},
-    {0x04, "comout", "w"},
-    {0x05, "prnout", "w"},
-    {0x06, "inpout", "w"},
-    {0x07, "inkey", ""},
-    {0x08, "getc", ""},
-    {0x09, "print", "s"},
-    {0x0a, "gets", "p"},
-    {0x0b, "keysns", ""},
-    {0x0c, "kflush", "w?"},
-    {0x0d, "fflush", ""},
-    {0x0e, "chgdrv", "w"},
-    {0x0f, "drvctrl", "w"},
-    {0x10, "consns", ""},
-    {0x11, "prnsns", ""},
-    {0x12, "cinsns", ""},
-    {0x13, "coutsns", ""},
-    /* { 0x14, "", "" }, */
-    /* { 0x15, "", "" }, */
-    /* { 0x16, "", "" }, */
-    {0x17, "fatchk", "sp?"},
-    {0x18, "hendsp", "w?"},
-    {0x19, "curdrv", ""},
-    {0x1a, "getss", "p"},
-    {0x1b, "fgetc", "w"},
-    {0x1c, "fgets", "pw"},
-    {0x1d, "fputc", "ww"},
-    {0x1e, "fputs", "sw"},
-    {0x1f, "allclose", ""},
-    {0x20, "super", "p"},
-    {0x21, "fnckey", "wp"},
-    {0x22, "knjctrl", "l?"},
-    {0x23, "conctrl", "w?"},
-    {0x24, "keyctrl", "w?"},
-    {0x25, "intvcs", "wp"},
-    {0x26, "pspset", "p"},
-    {0x27, "gettim2", ""},
-    {0x28, "settim2", "l"},
-    {0x29, "namests", "sp"},
-    {0x2a, "getdate", ""},
-    {0x2b, "setdate", "w"},
-    {0x2c, "gettime", ""},
-    {0x2d, "settime", "w"},
-    {0x2e, "verify", "w"},
-    {0x2f, "dup0", "ww"},
-    {0x30, "vernum", ""},
-    {0x31, "keeppr", "lw"},
-    {0x32, "getdpb", "wp"},
-    {0x33, "breakck", "w"},
-    {0x34, "drvxchg", "ww"},
-    {0x35, "intvcg", "w"},
-    {0x36, "dskfre", "wp"},
-    {0x37, "nameck", "sp"},
-    /* { 0x38, "", "" }, */
-    {0x39, "mkdir", "s"},
-    {0x3a, "rmdir", "s"},
-    {0x3b, "chdir", "s"},
-    {0x3c, "create", "sw"},
-    {0x3d, "open", "sw"},
-    {0x3e, "close", "w"},
-    {0x3f, "read", "wpl"},
-    {0x40, "write", "wpl"},
-    {0x41, "delete", "s"},
-    {0x42, "seek", "wlw"},
-    {0x43, "chmod", "sw"},
-    {0x44, "ioctrl", "w?"},
-    {0x45, "dup", "w"},
-    {0x46, "dup2", "ww"},
-    {0x47, "curdir", "wp"},
-    {0x48, "malloc", "l"},
-    {0x49, "mfree", "p"},
-    {0x4a, "setblock", "pl"},
-    {0x4b, "exec", "w?"},
-    {0x4c, "exit2", "w"},
-    {0x4d, "wait", ""},
-    {0x4e, "files", "psw"},
-    {0x4f, "nfiles", "p"},
+static const SystemCall Human_call_info[256] = {
+    {"exit", NULL},     // 0x00
+    {"getchar", NULL},  // 0x01
+    {"putchar", "w"},   // 0x02
+    {"cominp", NULL},   // 0x03
+    {"comout", "w"},    // 0x04
+    {"prnout", "w"},    // 0x05
+    {"inpout", "w"},    // 0x06
+    {"inkey", NULL},    // 0x07
+    {"getc", NULL},     // 0x08
+    {"print", "s"},     // 0x09
+    {"gets", "p"},      // 0x0a
+    {"keysns", NULL},   // 0x0b
+    {"kflush", "w?"},   // 0x0c
+    {"fflush", NULL},   // 0x0d
+    {"chgdrv", "w"},    // 0x0e
+    {"drvctrl", "w"},   // 0x0f
 
-    {0x50, "v2_setpdb", "p"},
-    {0x51, "v2_getpdb", ""},
-    {0x52, "v2_setenv", "sps"},
-    {0x53, "v2_getenv", "spp"},
-    {0x54, "v2_verifyg", ""},
-    {0x55, "v2_common", "w?"},
-    {0x56, "v2_rename", "ss"},
-    {0x57, "v2_filedate", "wl"},
-    {0x58, "v2_malloc2", "wl?"},
-    /* { 0x59, "", "" }, */
-    {0x5a, "v2_maketmp", "sw"},
-    {0x5b, "v2_newfile", "sw"},
-    {0x5c, "v2_lock", "wwll"},
-    /* { 0x5d, "", "" }, */
-    /* { 0x5e, "", "" }, */
-    {0x5f, "v2_assign", "w?"},
+    {"consns", NULL},    // 0x10
+    {"prnsns", NULL},    // 0x11
+    {"cinsns", NULL},    // 0x12
+    {"coutsns", NULL},   // 0x13
+    {NULL, NULL},        // 0x14
+    {NULL, NULL},        // 0x15
+    {NULL, NULL},        // 0x16
+    {"fatchk", "sp?"},   // 0x17
+    {"hendsp", "w?"},    // 0x18
+    {"curdrv", NULL},    // 0x19
+    {"getss", "p"},      // 0x1a
+    {"fgetc", "w"},      // 0x1b
+    {"fgets", "pw"},     // 0x1c
+    {"fputc", "ww"},     // 0x1d
+    {"fputs", "sw"},     // 0x1e
+    {"allclose", NULL},  // 0x1f
 
-    {0x60, "v2_malloc3", "l"},    /* 060turbo.sys */
-    {0x61, "v2_setblock2", "pl"}, /* 060turbo.sys */
-    {0x62, "v2_malloc4", "wl?"},  /* 060turbo.sys */
+    {"super", "p"},     // 0x20
+    {"fnckey", "wp"},   // 0x21
+    {"knjctrl", "l?"},  // 0x22
+    {"conctrl", "w?"},  // 0x23
+    {"keyctrl", "w?"},  // 0x24
+    {"intvcs", "wp"},   // 0x25
+    {"pspset", "p"},    // 0x26
+    {"gettim2", NULL},  // 0x27
+    {"settim2", "l"},   // 0x28
+    {"namests", "sp"},  // 0x29
+    {"getdate", NULL},  // 0x2a
+    {"setdate", "w"},   // 0x2b
+    {"gettime", NULL},  // 0x2c
+    {"settime", "w"},   // 0x2d
+    {"verify", "w"},    // 0x2e
+    {"dup0", "ww"},     // 0x2f
 
-    {0x7a, "v2_fflushflg", "w"},
-    {0x7b, "v2_ospatch", "wp"},
-    {0x7c, "v2_getfcb", "w"},
-    {0x7d, "v2_s_malloc", "wl"},
-    {0x7e, "v2_s_mfree", "p"},
-    {0x7f, "v2_s_process", "wpll"},
+    {"vernum", NULL},   // 0x30
+    {"keeppr", "lw"},   // 0x31
+    {"getdpb", "wp"},   // 0x32
+    {"breakck", "w"},   // 0x33
+    {"drvxchg", "ww"},  // 0x34
+    {"intvcg", "w"},    // 0x35
+    {"dskfre", "wp"},   // 0x36
+    {"nameck", "sp"},   // 0x37
+    {NULL, NULL},       // 0x38
+    {"mkdir", "s"},     // 0x39
+    {"rmdir", "s"},     // 0x3a
+    {"chdir", "s"},     // 0x3b
+    {"create", "sw"},   // 0x3c
+    {"open", "sw"},     // 0x3d
+    {"close", "w"},     // 0x3e
+    {"read", "wpl"},    // 0x3f
 
-    {0xb0, "twon", "w?"},  /* (V)TwentyOne.sys */
-    {0xb1, "mvdir", "w?"}, /* dos_mvdir.r */
+    {"write", "wpl"},    // 0x40
+    {"delete", "s"},     // 0x41
+    {"seek", "wlw"},     // 0x42
+    {"chmod", "sw"},     // 0x43
+    {"ioctrl", "w?"},    // 0x44
+    {"dup", "w"},        // 0x45
+    {"dup2", "ww"},      // 0x46
+    {"curdir", "wp"},    // 0x47
+    {"malloc", "l"},     // 0x48
+    {"mfree", "p"},      // 0x49
+    {"setblock", "pl"},  // 0x4a
+    {"exec", "w?"},      // 0x4b
+    {"exit2", "w"},      // 0x4c
+    {"wait", NULL},      // 0x4d
+    {"files", "psw"},    // 0x4e
+    {"nfiles", "p"},     // 0x4f
 
-    /* { 0xf0, "exitvc", "" }, */
-    /* { 0xf1, "ctrlvc", "" }, */
-    /* { 0xf2, "errjvc", "" }, */
-    {0xf3, "diskred", "pw?"},
-    {0xf4, "diskwrt", "pw?"},
-    {0xf5, "indosflg", ""},
-    {0xf6, "super_jsr", "p"},
-    {0xf7, "bus_err", "ppw"},
-    {0xf8, "open_pr", "swppwppl"},
-    {0xf9, "kill_pr", ""},
-    {0xfa, "get_pr", "wp"},
-    {0xfb, "suspend_pr", "w"},
-    {0xfc, "sleep_pr", "l"},
-    {0xfd, "send_pr", "wwwpl"},
-    {0xfe, "time_pr", ""},
-    {0xff, "change_pr", ""},
+    {"v2_setpdb", "p"},     // 0x50
+    {"v2_getpdb", NULL},    // 0x51
+    {"v2_setenv", "sps"},   // 0x52
+    {"v2_getenv", "spp"},   // 0x53
+    {"v2_verifyg", NULL},   // 0x54
+    {"v2_common", "w?"},    // 0x55
+    {"v2_rename", "ss"},    // 0x56
+    {"v2_filedate", "wl"},  // 0x57
+    {"v2_malloc2", "wl?"},  // 0x58
+    {NULL, NULL},           // 0x59
+    {"v2_maketmp", "sw"},   // 0x5a
+    {"v2_newfile", "sw"},   // 0x5b
+    {"v2_lock", "wwll"},    // 0x5c
+    {NULL, NULL},           // 0x5d
+    {NULL, NULL},           // 0x5e
+    {"v2_assign", "w?"},    // 0x5f
+
+    {"v2_malloc3", "l"},     // 0x60 (060turbo.sys)
+    {"v2_setblock2", "pl"},  // 0x61 (060turbo.sys)
+    {"v2_malloc4", "wl?"},   // 0x62 (060turbo.sys)
+    {NULL, NULL},            // 0x63
+    {NULL, NULL},            // 0x64
+    {NULL, NULL},            // 0x65
+    {NULL, NULL},            // 0x66
+    {NULL, NULL},            // 0x67
+    {NULL, NULL},            // 0x68
+    {NULL, NULL},            // 0x69
+    {NULL, NULL},            // 0x6a
+    {NULL, NULL},            // 0x6b
+    {NULL, NULL},            // 0x6c
+    {NULL, NULL},            // 0x6d
+    {NULL, NULL},            // 0x6e
+    {NULL, NULL},            // 0x6f
+
+    {NULL, NULL},              // 0x70
+    {NULL, NULL},              // 0x71
+    {NULL, NULL},              // 0x72
+    {NULL, NULL},              // 0x73
+    {NULL, NULL},              // 0x74
+    {NULL, NULL},              // 0x75
+    {NULL, NULL},              // 0x76
+    {NULL, NULL},              // 0x77
+    {NULL, NULL},              // 0x78
+    {NULL, NULL},              // 0x79
+    {"v2_fflushflg", "w"},     // 0x7a
+    {"v2_ospatch", "wp"},      // 0x7b
+    {"v2_getfcb", "w"},        // 0x7c
+    {"v2_s_malloc", "wl"},     // 0x7d
+    {"v2_s_mfree", "p"},       // 0x7e
+    {"v2_s_process", "wpll"},  // 0x7f
+
+    {"setpdb", "p"},     // 0x80
+    {"getpdb", NULL},    // 0x81
+    {"setenv", "sps"},   // 0x82
+    {"getenv", "spp"},   // 0x83
+    {"verifyg", NULL},   // 0x84
+    {"common", "w?"},    // 0x85
+    {"rename", "ss"},    // 0x86
+    {"filedate", "wl"},  // 0x87
+    {"malloc2", "wl?"},  // 0x88
+    {NULL, NULL},        // 0x89
+    {"maketmp", "sw"},   // 0x8a
+    {"newfile", "sw"},   // 0x8b
+    {"lock", "wwll"},    // 0x8c
+    {NULL, NULL},        // 0x8d
+    {NULL, NULL},        // 0x8e
+    {"assign", "w?"},    // 0x8f
+
+    {"malloc3", "l"},     // 0x90 (060turbo.sys)
+    {"setblock2", "pl"},  // 0x91 (060turbo.sys)
+    {"malloc4", "wl?"},   // 0x92 (060turbo.sys)
+    {NULL, NULL},         // 0x93
+    {NULL, NULL},         // 0x94
+    {NULL, NULL},         // 0x95
+    {NULL, NULL},         // 0x96
+    {NULL, NULL},         // 0x97
+    {NULL, NULL},         // 0x98
+    {NULL, NULL},         // 0x99
+    {NULL, NULL},         // 0x9a
+    {NULL, NULL},         // 0x9b
+    {NULL, NULL},         // 0x9c
+    {NULL, NULL},         // 0x9d
+    {NULL, NULL},         // 0x9e
+    {NULL, NULL},         // 0x9f
+
+    {NULL, NULL},           // 0xa0
+    {NULL, NULL},           // 0xa1
+    {NULL, NULL},           // 0xa2
+    {NULL, NULL},           // 0xa3
+    {NULL, NULL},           // 0xa4
+    {NULL, NULL},           // 0xa5
+    {NULL, NULL},           // 0xa6
+    {NULL, NULL},           // 0xa7
+    {NULL, NULL},           // 0xa8
+    {NULL, NULL},           // 0xa9
+    {"fflushflg", "w"},     // 0xaa
+    {"ospatch", "wp"},      // 0xab
+    {"getfcb", "w"},        // 0xac
+    {"s_malloc", "wl"},     // 0xad
+    {"s_mfree", "p"},       // 0xae
+    {"s_process", "wpll"},  // 0xaf
+
+    {"twon", "w?"},   // 0xb0 ((V)TwentyOne.sys)
+    {"mvdir", "w?"},  // 0xb1 (dos_mvdir.r)
+    {NULL, NULL},     // 0xb2
+    {NULL, NULL},     // 0xb3
+    {NULL, NULL},     // 0xb4
+    {NULL, NULL},     // 0xb5
+    {NULL, NULL},     // 0xb6
+    {NULL, NULL},     // 0xb7
+    {NULL, NULL},     // 0xb8
+    {NULL, NULL},     // 0xb9
+    {NULL, NULL},     // 0xba
+    {NULL, NULL},     // 0xbb
+    {NULL, NULL},     // 0xbc
+    {NULL, NULL},     // 0xbd
+    {NULL, NULL},     // 0xbe
+    {NULL, NULL},     // 0xbf
+
+    {NULL, NULL},  // 0xc0
+    {NULL, NULL},  // 0xc1
+    {NULL, NULL},  // 0xc2
+    {NULL, NULL},  // 0xc3
+    {NULL, NULL},  // 0xc4
+    {NULL, NULL},  // 0xc5
+    {NULL, NULL},  // 0xc6
+    {NULL, NULL},  // 0xc7
+    {NULL, NULL},  // 0xc8
+    {NULL, NULL},  // 0xc9
+    {NULL, NULL},  // 0xca
+    {NULL, NULL},  // 0xcb
+    {NULL, NULL},  // 0xcc
+    {NULL, NULL},  // 0xcd
+    {NULL, NULL},  // 0xce
+    {NULL, NULL},  // 0xcf
+
+    {NULL, NULL},  // 0xd0
+    {NULL, NULL},  // 0xd1
+    {NULL, NULL},  // 0xd2
+    {NULL, NULL},  // 0xd3
+    {NULL, NULL},  // 0xd4
+    {NULL, NULL},  // 0xd5
+    {NULL, NULL},  // 0xd6
+    {NULL, NULL},  // 0xd7
+    {NULL, NULL},  // 0xd8
+    {NULL, NULL},  // 0xd9
+    {NULL, NULL},  // 0xda
+    {NULL, NULL},  // 0xdb
+    {NULL, NULL},  // 0xdc
+    {NULL, NULL},  // 0xdd
+    {NULL, NULL},  // 0xde
+    {NULL, NULL},  // 0xdf
+
+    {NULL, NULL},  // 0xe0
+    {NULL, NULL},  // 0xe1
+    {NULL, NULL},  // 0xe2
+    {NULL, NULL},  // 0xe3
+    {NULL, NULL},  // 0xe4
+    {NULL, NULL},  // 0xe5
+    {NULL, NULL},  // 0xe6
+    {NULL, NULL},  // 0xe7
+    {NULL, NULL},  // 0xe8
+    {NULL, NULL},  // 0xe9
+    {NULL, NULL},  // 0xea
+    {NULL, NULL},  // 0xeb
+    {NULL, NULL},  // 0xec
+    {NULL, NULL},  // 0xed
+    {NULL, NULL},  // 0xee
+    {NULL, NULL},  // 0xef
+
+    {NULL, NULL},             // 0xf0 exitvc
+    {NULL, NULL},             // 0xf1 ctrlvc
+    {NULL, NULL},             // 0xf2 errjvc
+    {"diskred", "pw?"},       // 0xf3
+    {"diskwrt", "pw?"},       // 0xf4
+    {"indosflg", NULL},       // 0xf5
+    {"super_jsr", "p"},       // 0xf6
+    {"bus_err", "ppw"},       // 0xf7
+    {"open_pr", "swppwppl"},  // 0xf8
+    {"kill_pr", NULL},        // 0xf9
+    {"get_pr", "wp"},         // 0xfa
+    {"suspend_pr", "w"},      // 0xfb
+    {"sleep_pr", "l"},        // 0xfc
+    {"send_pr", "wwwpl"},     // 0xfd
+    {"time_pr", NULL},        // 0xfe
+    {"change_pr", NULL},      // 0xff
 };
-
-RawSystemCallSlice get_raw_doscall_slice(void) {
-  RawSystemCallSlice slice = {C(Human_system_call), Human_system_call};
-  return slice;
-}
+DEFINE_GET_SLICE(Human);
 
 static const SystemCall Kflush_call_info[] = {
-    {"kflush", "w"},
-    {"kflush{gp}", "w"},
-    {"", ""},
-    {"", ""},
-    {"", ""},
-    {"", ""},
-    {"kflush{io}", "ww"},
-    {"kflush{in}", "w"},
-    {"kflush{gc}", "w"},
-    {"", ""},
+    {"kflush", "w"},       //
+    {"kflush{gp}", "w"},   //
+    {NULL, NULL},          //
+    {NULL, NULL},          //
+    {NULL, NULL},          //
+    {NULL, NULL},          //
+    {"kflush{io}", "ww"},  //
+    {"kflush{in}", "w"},   //
+    {"kflush{gc}", "w"},   //
+    {NULL, NULL},          //
     {"kflush{gs}", "wp"},
 };
 DEFINE_GET_SLICE(Kflush);
@@ -195,70 +336,70 @@ static const SystemCall Hendsp_call_info[] = {
 DEFINE_GET_SLICE(Hendsp);
 
 static const SystemCall Knjctrl_call_info[] = {
-    {"", ""}, /* 0 */
-    {"knjctrl", "ll"},
-    {"knjctrl", "l"},
-    {"knjctrl", "ll"},
-    {"knjctrl", "l"},
-    {"knjctrl", "ll"}, /* 5 */
-    {"knjctrl", "l"},
-    {"knjctrl", "ll"},
-    {"knjctrl", "l"},
-    {"knjctrl", "ll"},
-    {"knjctrl", "l"}, /* 10 */
-    {"knjctrl", "ll"},
-    {"knjctrl", "l"},
-    {"knjctrl", "lsl"},
-    {"knjctrl", "lsl"},
-    {"knjctrl", "lsl"}, /* 15 */
-    {"knjctrl", "lsl"},
-    {"knjctrl", "lsl"},
-    {"knjctrl", "lsl"},
-    {"knjctrl", "lsll"},
-    {"knjctrl", "lll"}, /* 20 */
-    {"knjctrl", "lll"},
-    {"knjctrl", "lll"},
-    {"knjctrl", "lll"},
-    {"knjctrl", "ll"},
-    {"knjctrl", "llllll"}, /* 25 */
-    {"knjctrl", "lsll"},
-    {"knjctrl", "llll"},
-    {"knjctrl", "l"},
-    {"knjctrl", "l"},
-    {"knjctrl", "llssl"}, /* 30 */
-    {"knjctrl", "llssl"},
-    {"knjctrl", "lss"},
-    {"knjctrl", "lll"},
-    {"knjctrl", "lll"},
-    {"knjctrl", "lll"}, /* 35 */
-    {"knjctrl", "lll"},
-    {"knjctrl", "lll"},
-    {"knjctrl", "lll"},
-    {"knjctrl", "lll"},
-    {"knjctrl", "lll"}, /* 40 */
-    {"knjctrl", "lll"},
-    {"knjctrl", "l"},
-    {"", ""},
-    {"", ""},
-    {"", ""}, /* 45 */
-    {"", ""},
-    {"", ""},
-    {"", ""},
-    {"", ""},
-    {"knjctrl", "l"}, /* 50 */
-    {"knjctrl", "l"},
-    {"knjctrl", "ls"},
-    {"knjctrl", "l"},
-    {"knjctrl", "ll"},
-    {"knjctrl", "l"}, /* 55 */
-    {"knjctrl", "ll"},
-    {"", ""},
-    {"", ""},
-    {"", ""},
-    {"knjctrl", "lp"}, /* 60 */
-    {"knjctrl", "l"},
-    {"knjctrl", "lpsl"},
-    {"knjctrl", "lpll"},
+    {NULL, NULL},           // 0
+    {"knjctrl", "ll"},      // 1
+    {"knjctrl", "l"},       // 2
+    {"knjctrl", "ll"},      // 3
+    {"knjctrl", "l"},       // 4
+    {"knjctrl", "ll"},      // 5
+    {"knjctrl", "l"},       // 6
+    {"knjctrl", "ll"},      // 7
+    {"knjctrl", "l"},       // 8
+    {"knjctrl", "ll"},      // 9
+    {"knjctrl", "l"},       // 10
+    {"knjctrl", "ll"},      // 11
+    {"knjctrl", "l"},       // 12
+    {"knjctrl", "lsl"},     // 13
+    {"knjctrl", "lsl"},     // 14
+    {"knjctrl", "lsl"},     // 15
+    {"knjctrl", "lsl"},     // 16
+    {"knjctrl", "lsl"},     // 17
+    {"knjctrl", "lsl"},     // 18
+    {"knjctrl", "lsll"},    // 19
+    {"knjctrl", "lll"},     // 20
+    {"knjctrl", "lll"},     // 21
+    {"knjctrl", "lll"},     // 22
+    {"knjctrl", "lll"},     // 23
+    {"knjctrl", "ll"},      // 24
+    {"knjctrl", "llllll"},  // 25
+    {"knjctrl", "lsll"},    // 26
+    {"knjctrl", "llll"},    // 27
+    {"knjctrl", "l"},       // 28
+    {"knjctrl", "l"},       // 29
+    {"knjctrl", "llssl"},   // 30
+    {"knjctrl", "llssl"},   // 31
+    {"knjctrl", "lss"},     // 32
+    {"knjctrl", "lll"},     // 33
+    {"knjctrl", "lll"},     // 34
+    {"knjctrl", "lll"},     // 35
+    {"knjctrl", "lll"},     // 36
+    {"knjctrl", "lll"},     // 37
+    {"knjctrl", "lll"},     // 38
+    {"knjctrl", "lll"},     // 39
+    {"knjctrl", "lll"},     // 40
+    {"knjctrl", "lll"},     // 41
+    {"knjctrl", "l"},       // 42
+    {NULL, NULL},           // 43
+    {NULL, NULL},           // 44
+    {NULL, NULL},           // 45
+    {NULL, NULL},           // 46
+    {NULL, NULL},           // 47
+    {NULL, NULL},           // 48
+    {NULL, NULL},           // 49
+    {"knjctrl", "l"},       // 50
+    {"knjctrl", "l"},       // 51
+    {"knjctrl", "ls"},      // 52
+    {"knjctrl", "l"},       // 53
+    {"knjctrl", "ll"},      // 54
+    {"knjctrl", "l"},       // 55
+    {"knjctrl", "ll"},      // 56
+    {NULL, NULL},           // 57
+    {NULL, NULL},           // 58
+    {NULL, NULL},           // 59
+    {"knjctrl", "lp"},      // 60
+    {"knjctrl", "l"},       // 61
+    {"knjctrl", "lpsl"},    // 62
+    {"knjctrl", "lpll"},    // 63
 };
 DEFINE_GET_SLICE(Knjctrl);
 
@@ -303,7 +444,7 @@ static const SystemCall Ioctrl_call_info[] = {
     {"ioctrl{wd}", "wwll"},
     {"ioctrl{is}", "ww"},
     {"ioctrl{os}", "ww"},
-    {"", ""},
+    {NULL, NULL},
     {"ioctrl{dvgt}", "ww"},
     {"ioctrl{fdgt}", "ww"},
     {"ioctrl{rtset}", "www"},
@@ -345,8 +486,8 @@ DEFINE_GET_SLICE(Common);
 static const SystemCall v2Assign_call_info[] = {
     {"v2_assign{getassign}", "wsp"},
     {"v2_assign{makeassign}", "wssw"},
-    {"", ""},
-    {"", ""},
+    {NULL, NULL},
+    {NULL, NULL},
     {"v2_assign{rassign}", "ws"},
 };
 DEFINE_GET_SLICE(v2Assign);
@@ -354,8 +495,8 @@ DEFINE_GET_SLICE(v2Assign);
 static const SystemCall Assign_call_info[] = {
     {"assign{getassign}", "wsp"},
     {"assign{makeassign}", "wssw"},
-    {"", ""},
-    {"", ""},
+    {NULL, NULL},
+    {NULL, NULL},
     {"assign{rassign}", "ws"},
 };
 DEFINE_GET_SLICE(Assign);

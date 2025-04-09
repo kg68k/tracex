@@ -38,42 +38,13 @@ static void decode_argument(int call, const void* arg, char* buffer,
 static void decode_argument_by_letter(char* buffer, const char* argletter,
                                       const void* arg);
 
-static SystemCall System_call_info[256];
-
-void Initialize_argument_information(void) {
-  const RawSystemCallSlice slice = get_raw_doscall_slice();
-  int i;
-
-  for (i = 0; i < 256; i++) System_call_info[i].name = NULL;
-
-  for (i = 0; i < slice.length; i++) {
-    const RawSystemCall* call = &slice.array[i];
-    const int j = call->number;
-
-    System_call_info[j].name = call->name;
-    System_call_info[j].argletter = call->argletter;
-
-#define SKIP_LEN 3 /* strlen ("v2_") */
-
-    if ((unsigned char)(j - 0x50) <= (0x7f - 0x50)) {
-      System_call_info[j + 0x30].name = call->name + SKIP_LEN;
-      System_call_info[j + 0x30].argletter = call->argletter;
-    }
-  }
-}
-
 // _countof()
 #define C(array) (sizeof(array) / sizeof(array[0]))
 
-SystemCallSlice get_doscall_slice(void) {
-  SystemCallSlice slice = {C(System_call_info), System_call_info};
-  return slice;
-}
-
-static void fatchk(int doscall, void* arg, char* argbuf) {
+static void fatchk(const char* name, void* arg, char* argbuf) {
   char* argletter;
 
-  strcpy(argbuf, System_call_info[doscall].name);
+  strcpy(argbuf, name);
   argbuf += strlen(argbuf);
 
   argletter = "sp";
@@ -87,10 +58,10 @@ static void fatchk(int doscall, void* arg, char* argbuf) {
   decode_argument_by_letter(argbuf, argletter, arg);
 }
 
-static void malloc2(int doscall, void* arg, char* argbuf) {
+static void malloc2(const char* name, void* arg, char* argbuf) {
   char* argletter;
 
-  strcpy(argbuf, System_call_info[doscall].name);
+  strcpy(argbuf, name);
   argbuf += strlen(argbuf);
 
   argletter = "wl";
@@ -104,10 +75,10 @@ static void malloc2(int doscall, void* arg, char* argbuf) {
   decode_argument_by_letter(argbuf, argletter, arg);
 }
 
-static void disk(int doscall, void* arg, char* argbuf) {
+static void disk(const char* name, void* arg, char* argbuf) {
   char* argletter;
 
-  strcpy(argbuf, System_call_info[doscall].name);
+  strcpy(argbuf, name);
   argbuf += strlen(argbuf);
 
   argletter = "pwww";
@@ -121,15 +92,18 @@ static void disk(int doscall, void* arg, char* argbuf) {
   decode_argument_by_letter(argbuf, argletter, arg);
 }
 
-#define DECODE(first, info_name)                    \
-  decode_argument(*(first*)arg & 0xff, arg, argbuf, \
-                  System_call_info[doscall].name,   \
+#define DECODE(first, info_name)                          \
+  decode_argument(*(first*)arg & 0xff, arg, argbuf, name, \
                   get_##info_name##_call_slice())
 
 char* Format_output(int doscall, void* arg) {
   static char argbuf[256];
 
-  if (doscall < 0 || 255 < doscall || System_call_info[doscall].name == NULL) {
+  SystemCallSlice slice = get_Human_call_slice();
+  const char* name =
+      (0 <= doscall && doscall <= 255) ? slice.array[doscall].name : NULL;
+
+  if (name == NULL) {
     sprintf(argbuf, "dos(%#x){UNDEFINED}", doscall);
     return argbuf;
   }
@@ -139,7 +113,7 @@ char* Format_output(int doscall, void* arg) {
       DECODE(short, Kflush);
       break;
     case 0x17: /* fatchk */
-      fatchk(doscall, arg, argbuf);
+      fatchk(name, arg, argbuf);
       break;
     case 0x18: /* hendsp */
       DECODE(short, Hendsp);
@@ -166,7 +140,7 @@ char* Format_output(int doscall, void* arg) {
     case 0x60: /* v2_malloc4 */
     case 0x88: /* malloc2 */
     case 0x90: /* malloc4 */
-      malloc2(doscall, arg, argbuf);
+      malloc2(name, arg, argbuf);
       break;
     case 0x5f: /* v2_assign */
       DECODE(short, v2Assign);
@@ -185,10 +159,10 @@ char* Format_output(int doscall, void* arg) {
       break;
     case 0xf3: /* diskred */
     case 0xf4: /* diskwrt */
-      disk(doscall, arg, argbuf);
+      disk(name, arg, argbuf);
       break;
     default:
-      decode_argument(doscall, arg, argbuf, "dos", get_doscall_slice());
+      decode_argument(doscall, arg, argbuf, "dos", get_Human_call_slice());
       break;
   }
   return argbuf;
@@ -196,7 +170,7 @@ char* Format_output(int doscall, void* arg) {
 
 static void decode_argument(int call, const void* arg, char* buffer,
                             const char* name, SystemCallSlice slice) {
-  if (call >= slice.length || slice.array[call].name[0] == '\0') {
+  if (call >= slice.length || slice.array[call].name == NULL) {
     sprintf(buffer, "%s(%d){UNDEFINED}", name, call);
     return;
   }
@@ -243,6 +217,8 @@ static void decode_argument_by_letter(char* buffer, const char* argletter,
   char temp[256];
 
   *buffer++ = '(';
+
+  if (argletter == NULL) argletter = "";
 
   while (*argletter) {
     switch (*argletter++) {

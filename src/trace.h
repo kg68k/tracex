@@ -5,7 +5,6 @@ extern void setup_doscall_handler(void);
 extern void restore_doscall_handler(void);
 
 /* argument.c */
-extern void Initialize_argument_information(void);
 extern char *Format_output(int, void *);
 
 /* display.c */

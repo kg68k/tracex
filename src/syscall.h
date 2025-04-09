@@ -20,17 +20,6 @@
 #define SYSCALL_H
 
 typedef struct {
-  const int number;
-  const char* name;
-  const char* argletter;
-} RawSystemCall;
-
-typedef struct {
-  const int length;
-  const RawSystemCall* array;
-} RawSystemCallSlice;
-
-typedef struct {
   const char* name;
   const char* argletter;
 } SystemCall;
@@ -40,9 +29,8 @@ typedef struct {
   const SystemCall* array;
 } SystemCallSlice;
 
-RawSystemCallSlice get_raw_doscall_slice(void);
-
 #define DEFINE_GET_SLICE(name) SystemCallSlice get_##name##_call_slice(void);
+DEFINE_GET_SLICE(Human);
 DEFINE_GET_SLICE(Kflush);
 DEFINE_GET_SLICE(Hendsp);
 DEFINE_GET_SLICE(Knjctrl);

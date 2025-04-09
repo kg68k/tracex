@@ -104,7 +104,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  Initialize_argument_information();
   command_name = argv[i];
   command_argv = &argv[i];
   return trace(command_name, (void*)command_argv);
