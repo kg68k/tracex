@@ -101,10 +101,12 @@ extern void display2(int result) {
     fprintf(Stream, "=%d", result);
     if ((unsigned long)result >= 10) fprintf(Stream, "(%#x)", result);
 
-    if (result < 0)
-      if (ERROR_NUMBER_MIN <= result || result == -80)
-        fprintf(Stream, "(%s)",
-                Human_error_message[(result == -80) ? 0 : -result]);
+    if (result < 0) {
+      const char *msg = get_human_error_message(result);
+      if (msg) {
+        fprintf(Stream, "(%s)", msg);
+      }
+    }
 
     putc('\n', Stream);
   }

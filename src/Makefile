@@ -6,7 +6,7 @@ CC = gcc2
 CFLAGS = -Wall -O2 -fall-bsr
 
 
-SRCS = trace.c argument.c display.c handler.s syscall.c version.c
+SRCS = trace.c argument.c display.c error.c handler.s syscall.c version.c
 OBJS = $(foreach f,$(SRCS),$(basename $(f)).o)
 TARGET = trace.x
 
@@ -25,3 +25,4 @@ trace.o: trace.h
 argument.o: trace.h syscall.h
 display.o: trace.h error.h
 syscall.o: syscall.h
+error.o: error.h
