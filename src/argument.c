@@ -112,6 +112,10 @@ static void escape(char* str, char* buffer) {
   *buffer++ = '\0';
 }
 
+static const void* advance(const void* arg, int n) {
+  return (const void*)((const char*)arg + n);
+}
+
 static void decode_argument_by_letter(char* buffer, const char* argletter,
                                       const void* arg) {
   char temp[256];
@@ -126,12 +130,12 @@ static void decode_argument_by_letter(char* buffer, const char* argletter,
         buffer += sprintf(buffer, "%d", *(short*)arg);
         if (*(unsigned short*)arg >= 10)
           buffer += sprintf(buffer, "(%#x)", *(short*)arg & 0xffff);
-        arg += 2;
+        arg = advance(arg, 2);
         break;
       case 'l': /* ロングワード値 */
         buffer += sprintf(buffer, "%d", *(int*)arg);
         if (*(long*)arg >= 10) buffer += sprintf(buffer, "(%#x)", *(int*)arg);
-        arg += 4;
+        arg = advance(arg, 4);
         break;
       case 'p': /* ポインタ */
         if ((void*)*(long*)arg)
@@ -142,14 +146,14 @@ static void decode_argument_by_letter(char* buffer, const char* argletter,
           *buffer++ = 'L';
           *buffer++ = 'L';
         }
-        arg += 4;
+        arg = advance(arg, 4);
         break;
       case 's': /* 文字列 */
         escape((char*)*(long*)arg, temp);
         /* buffer += sprintf (buffer, "%s", temp); */
         strcpy(buffer, temp);
         buffer += strlen(buffer);
-        arg += 4;
+        arg = advance(arg, 4);
         break;
       default:
         goto exit;
