@@ -41,23 +41,26 @@ extern int isprkana(int);
 #define ADDRESS_MASK 0x1fffffff /* 060turbo */
 #endif
 
-static void decode_argument_by_letter(char* buffer, const char* argletter,
-                                      const void* arg);
+static void decode_argument_by_letter(char* buffer, const char* name,
+                                      const char* argletter, const void* arg);
 
-static void decode_argument(unsigned int callno, const void* arg, char* buffer,
-                            const char* name, const SystemCallInfo* info) {
-  if (callno >= info->length || info->list[callno].name == NULL) {
+static void format_sub(const SystemCallInfo* sub, const void* arg, char* buffer,
+                       const char* name) {
+  unsigned int callno = sub->getSubCallNo(arg);
+
+  if (callno >= sub->length || sub->list[callno].name == NULL) {
     sprintf(buffer, "%s(%d){UNDEFINED}", name, callno);
     return;
   }
 
-  strcpy(buffer, info->list[callno].name);
-  decode_argument_by_letter(buffer + strlen(buffer),
-                            info->list[callno].argletter, arg);
+  decode_argument_by_letter(buffer, sub->list[callno].name,
+                            sub->list[callno].argletter, arg);
 }
 
 char* Format_output(unsigned int doscall, void* arg) {
   static char argbuf[256];
+  char* writeptr = argbuf;
+
   const SystemCall* dos = &HumanInfo.list[doscall];
   const SystemCallInfo* sub;
 
@@ -66,15 +69,19 @@ char* Format_output(unsigned int doscall, void* arg) {
     return argbuf;
   }
 
+  if (0x50 <= doscall && doscall <= 0x7f) {
+    // 0xff50～0xff7fのDOSコールは頭にv2_を付ける
+    strcpy(writeptr, "v2_");
+    writeptr += strlen(writeptr);
+  }
+
   sub = GetSubCallInfo(doscall);
   if (sub) {
     // モードによって引数の型が変わるDOSコールの処理
-    unsigned int callno = sub->getSubCallNo(arg);
-    decode_argument(callno, arg, argbuf, dos->name, sub);
+    format_sub(sub, arg, writeptr, dos->name);
   } else {
     // 引数の型が一定なDOSコールの処理
-    strcpy(argbuf, dos->name);
-    decode_argument_by_letter(argbuf + strlen(argbuf), dos->argletter, arg);
+    decode_argument_by_letter(writeptr, dos->name, dos->argletter, arg);
   }
 
   return argbuf;
@@ -116,9 +123,12 @@ static const void* advance(const void* arg, int n) {
   return (const void*)((const char*)arg + n);
 }
 
-static void decode_argument_by_letter(char* buffer, const char* argletter,
-                                      const void* arg) {
+static void decode_argument_by_letter(char* buffer, const char* name,
+                                      const char* argletter, const void* arg) {
   char temp[256];
+
+  strcpy(buffer, name);
+  buffer += strlen(buffer);
 
   *buffer++ = '(';
 

@@ -109,56 +109,56 @@ static const SystemCall HumanList[256] = {
     {"files", "psw"},    // 0x4e
     {"nfiles", "p"},     // 0x4f
 
-    {"v2_setpdb", "p"},     // 0x50
-    {"v2_getpdb", NULL},    // 0x51
-    {"v2_setenv", "sps"},   // 0x52
-    {"v2_getenv", "spp"},   // 0x53
-    {"v2_verifyg", NULL},   // 0x54
-    {"v2_common", "w?"},    // 0x55
-    {"v2_rename", "ss"},    // 0x56
-    {"v2_filedate", "wl"},  // 0x57
-    {"v2_malloc2", "wl?"},  // 0x58
-    {NULL, NULL},           // 0x59
-    {"v2_maketmp", "sw"},   // 0x5a
-    {"v2_newfile", "sw"},   // 0x5b
-    {"v2_lock", "wwll"},    // 0x5c
-    {NULL, NULL},           // 0x5d
-    {NULL, NULL},           // 0x5e
-    {"v2_assign", "w?"},    // 0x5f
+    {"setpdb", "p"},     // 0x50
+    {"getpdb", NULL},    // 0x51
+    {"setenv", "sps"},   // 0x52
+    {"getenv", "spp"},   // 0x53
+    {"verifyg", NULL},   // 0x54
+    {"common", "w?"},    // 0x55
+    {"rename", "ss"},    // 0x56
+    {"filedate", "wl"},  // 0x57
+    {"malloc2", "wl?"},  // 0x58
+    {NULL, NULL},        // 0x59
+    {"maketmp", "sw"},   // 0x5a
+    {"newfile", "sw"},   // 0x5b
+    {"lock", "wwll"},    // 0x5c
+    {NULL, NULL},        // 0x5d
+    {NULL, NULL},        // 0x5e
+    {"assign", "w?"},    // 0x5f
 
-    {"v2_malloc3", "l"},     // 0x60 (060turbo.sys)
-    {"v2_setblock2", "pl"},  // 0x61 (060turbo.sys)
-    {"v2_malloc4", "wl?"},   // 0x62 (060turbo.sys)
-    {NULL, NULL},            // 0x63
-    {NULL, NULL},            // 0x64
-    {NULL, NULL},            // 0x65
-    {NULL, NULL},            // 0x66
-    {NULL, NULL},            // 0x67
-    {NULL, NULL},            // 0x68
-    {NULL, NULL},            // 0x69
-    {NULL, NULL},            // 0x6a
-    {NULL, NULL},            // 0x6b
-    {NULL, NULL},            // 0x6c
-    {NULL, NULL},            // 0x6d
-    {NULL, NULL},            // 0x6e
-    {NULL, NULL},            // 0x6f
+    {"malloc3", "l"},     // 0x60 (060turbo.sys)
+    {"setblock2", "pl"},  // 0x61 (060turbo.sys)
+    {"malloc4", "wl?"},   // 0x62 (060turbo.sys)
+    {NULL, NULL},         // 0x63
+    {NULL, NULL},         // 0x64
+    {NULL, NULL},         // 0x65
+    {NULL, NULL},         // 0x66
+    {NULL, NULL},         // 0x67
+    {NULL, NULL},         // 0x68
+    {NULL, NULL},         // 0x69
+    {NULL, NULL},         // 0x6a
+    {NULL, NULL},         // 0x6b
+    {NULL, NULL},         // 0x6c
+    {NULL, NULL},         // 0x6d
+    {NULL, NULL},         // 0x6e
+    {NULL, NULL},         // 0x6f
 
-    {NULL, NULL},              // 0x70
-    {NULL, NULL},              // 0x71
-    {NULL, NULL},              // 0x72
-    {NULL, NULL},              // 0x73
-    {NULL, NULL},              // 0x74
-    {NULL, NULL},              // 0x75
-    {NULL, NULL},              // 0x76
-    {NULL, NULL},              // 0x77
-    {NULL, NULL},              // 0x78
-    {NULL, NULL},              // 0x79
-    {"v2_fflushflg", "w"},     // 0x7a
-    {"v2_ospatch", "wp"},      // 0x7b
-    {"v2_getfcb", "w"},        // 0x7c
-    {"v2_s_malloc", "wl"},     // 0x7d
-    {"v2_s_mfree", "p"},       // 0x7e
-    {"v2_s_process", "wpll"},  // 0x7f
+    {NULL, NULL},           // 0x70
+    {NULL, NULL},           // 0x71
+    {NULL, NULL},           // 0x72
+    {NULL, NULL},           // 0x73
+    {NULL, NULL},           // 0x74
+    {NULL, NULL},           // 0x75
+    {NULL, NULL},           // 0x76
+    {NULL, NULL},           // 0x77
+    {NULL, NULL},           // 0x78
+    {NULL, NULL},           // 0x79
+    {"fflushflg", "w"},     // 0x7a
+    {"ospatch", "wp"},      // 0x7b
+    {"getfcb", "w"},        // 0x7c
+    {"s_malloc", "wl"},     // 0x7d
+    {"s_mfree", "p"},       // 0x7e
+    {"s_process", "wpll"},  // 0x7f
 
     {"setpdb", "p"},     // 0x80
     {"getpdb", NULL},    // 0x81
@@ -485,17 +485,6 @@ static const SystemCall ExecList[] = {
 };
 static SystemCallInfo ExecInfo = {C(ExecList), ExecList, GetExecMode};
 
-static const SystemCall v2CommonList[] = {
-    {"v2_common{ck}", "ws"},      //
-    {"v2_common{rd}", "wslll"},   //
-    {"v2_common{wt}", "wslll"},   //
-    {"v2_common{lk}", "wslll"},   //
-    {"v2_common{fre}", "wslll"},  //
-    {"v2_common{del}", "ws"},
-};
-static SystemCallInfo v2CommonInfo = {C(v2CommonList), v2CommonList,
-                                      GetModeWord};
-
 static const SystemCall CommonList[] = {
     {"common{ck}", "ws"},      //
     {"common{rd}", "wslll"},   //
@@ -514,20 +503,6 @@ static unsigned int GetMalloc2Mode(const void* arg) {
   return (*md0 & 0x80) ? 1 : 0;
 }
 
-static const SystemCall v2Malloc2List[] = {
-    {"v2_malloc2", "wl"},      // 通常モード
-    {"v2_malloc2{2}", "wlp"},  // プロセス管理ポインタ指定モード
-};
-static SystemCallInfo v2Malloc2Info = {  //
-    C(v2Malloc2List), v2Malloc2List, GetMalloc2Mode};
-
-static const SystemCall v2Malloc4List[] = {
-    {"v2_malloc4", "wl"},      // 通常モード
-    {"v2_malloc4{2}", "wlp"},  // プロセス管理ポインタ指定モード
-};
-static SystemCallInfo v2Malloc4Info = {  //
-    C(v2Malloc4List), v2Malloc4List, GetMalloc2Mode};
-
 static const SystemCall Malloc2List[] = {
     {"malloc2", "wl"},      // 通常モード
     {"malloc2{2}", "wlp"},  // プロセス管理ポインタ指定モード
@@ -541,16 +516,6 @@ static const SystemCall Malloc4List[] = {
 };
 static SystemCallInfo Malloc4Info = {  //
     C(Malloc4List), Malloc4List, GetMalloc2Mode};
-
-static const SystemCall v2AssignList[] = {
-    {"v2_assign{getassign}", "wsp"},
-    {"v2_assign{makeassign}", "wssw"},
-    {NULL, NULL},
-    {NULL, NULL},
-    {"v2_assign{rassign}", "ws"},
-};
-static SystemCallInfo v2AssignInfo = {C(v2AssignList), v2AssignList,
-                                      GetModeWord};
 
 static const SystemCall AssignList[] = {
     {"assign{getassign}", "wsp"},
@@ -624,19 +589,15 @@ const SystemCallInfo* GetSubCallInfo(unsigned char callno) {
     case 0x4b:
       return &ExecInfo;
     case 0x55:
-      return &v2CommonInfo;
-    case 0x58:
-      return &v2Malloc2Info;
-    case 0x5f:
-      return &v2AssignInfo;
-    case 0x62:
-      return &v2Malloc4Info;
     case 0x85:
       return &CommonInfo;
+    case 0x58:
     case 0x88:
       return &Malloc2Info;
+    case 0x5f:
     case 0x8f:
       return &AssignInfo;
+    case 0x62:
     case 0x92:
       return &Malloc4Info;
     case 0xb0:
