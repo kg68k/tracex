@@ -38,7 +38,7 @@ static char exec_flag = 0;
 static char Flush_flag = 1;
 
 extern void display1(int callnum, void *arg) {
-  callnum &= 0xff;
+  const unsigned int callno = callnum & 0xff;
 
   if (Flush_flag == 0) {
     /* 再帰か終了系コール直後の返値相当の文字は次のコールで表示する */
@@ -72,12 +72,12 @@ extern void display1(int callnum, void *arg) {
     }
   }
 
-  Formatted_string = Format_output(callnum, arg);
+  Formatted_string = Format_output(callno, arg);
 
   Last_instruction_not_return =
-      (callnum == 0 || callnum == 0x4c || callnum == 0x31);
+      (callno == 0 || callno == 0x4c || callno == 0x31);
 
-  if (callnum == 0x4b && (*(short *)arg == 0 || *(short *)arg == 4))
+  if (callno == 0x4b && (*(short *)arg == 0 || *(short *)arg == 4))
     exec_level = Doscall_nestlevel;
 
   if (Option_A_flag || 1 == exec_flag) Count++;

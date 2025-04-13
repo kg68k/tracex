@@ -25,25 +25,12 @@ typedef struct {
 } SystemCall;
 
 typedef struct {
-  const int length;
-  const SystemCall* array;
-} SystemCallSlice;
+  unsigned int length;
+  const SystemCall* list;
+  unsigned int (*getSubCallNo)(const void* arg);
+} SystemCallInfo;
 
-#define DEFINE_GET_SLICE(name) SystemCallSlice get_##name##_call_slice(void);
-DEFINE_GET_SLICE(Human);
-DEFINE_GET_SLICE(Kflush);
-DEFINE_GET_SLICE(Hendsp);
-DEFINE_GET_SLICE(Knjctrl);
-DEFINE_GET_SLICE(Conctrl);
-DEFINE_GET_SLICE(Keyctrl);
-DEFINE_GET_SLICE(Ioctrl);
-DEFINE_GET_SLICE(Exec);
-DEFINE_GET_SLICE(v2Common);
-DEFINE_GET_SLICE(Common);
-DEFINE_GET_SLICE(v2Assign);
-DEFINE_GET_SLICE(Assign);
-DEFINE_GET_SLICE(Twon);
-DEFINE_GET_SLICE(Mvdir);
-#undef DEFINE_GET_SLICE
+extern SystemCallInfo HumanInfo;
+const SystemCallInfo* GetSubCallInfo(unsigned char callno);
 
 #endif

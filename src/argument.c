@@ -33,8 +33,6 @@
 #define ADDRESS_MASK 0x1fffffff /* 060turbo */
 #endif
 
-static void decode_argument(int call, const void* arg, char* buffer,
-                            const char* name, SystemCallSlice slice);
 static void decode_argument_by_letter(char* buffer, const char* argletter,
                                       const void* arg);
 
@@ -92,92 +90,67 @@ static void disk(const char* name, void* arg, char* argbuf) {
   decode_argument_by_letter(argbuf, argletter, arg);
 }
 
-#define DECODE(first, info_name)                          \
-  decode_argument(*(first*)arg & 0xff, arg, argbuf, name, \
-                  get_##info_name##_call_slice())
-
-char* Format_output(int doscall, void* arg) {
-  static char argbuf[256];
-
-  SystemCallSlice slice = get_Human_call_slice();
-  const char* name =
-      (0 <= doscall && doscall <= 255) ? slice.array[doscall].name : NULL;
-
-  if (name == NULL) {
-    sprintf(argbuf, "dos(%#x){UNDEFINED}", doscall);
-    return argbuf;
-  }
-
-  switch (doscall) {
-    case 0x0c: /* kflush */
-      DECODE(short, Kflush);
-      break;
-    case 0x17: /* fatchk */
-      fatchk(name, arg, argbuf);
-      break;
-    case 0x18: /* hendsp */
-      DECODE(short, Hendsp);
-      break;
-    case 0x44: /* ioctrl */
-      DECODE(short, Ioctrl);
-      break;
-    case 0x22: /* knjctrl */
-      DECODE(long, Knjctrl);
-      break;
-    case 0x23: /* conctrl */
-      DECODE(short, Conctrl);
-      break;
-    case 0x24: /* keyctrl */
-      DECODE(short, Keyctrl);
-      break;
-    case 0x4b: /* exec */
-      DECODE(short, Exec);
-      break;
-    case 0x55: /* v2_common */
-      DECODE(short, v2Common);
-      break;
-    case 0x58: /* v2_malloc2 */
-    case 0x60: /* v2_malloc4 */
-    case 0x88: /* malloc2 */
-    case 0x90: /* malloc4 */
-      malloc2(name, arg, argbuf);
-      break;
-    case 0x5f: /* v2_assign */
-      DECODE(short, v2Assign);
-      break;
-    case 0x85: /* common */
-      DECODE(short, Common);
-      break;
-    case 0x8f: /* assign */
-      DECODE(short, Assign);
-      break;
-    case 0xb0: /* twon */
-      DECODE(short, Twon);
-      break;
-    case 0xb1: /* mvdir */
-      DECODE(short, Mvdir);
-      break;
-    case 0xf3: /* diskred */
-    case 0xf4: /* diskwrt */
-      disk(name, arg, argbuf);
-      break;
-    default:
-      decode_argument(doscall, arg, argbuf, "dos", get_Human_call_slice());
-      break;
-  }
-  return argbuf;
-}
-
-static void decode_argument(int call, const void* arg, char* buffer,
-                            const char* name, SystemCallSlice slice) {
-  if (call >= slice.length || slice.array[call].name == NULL) {
-    sprintf(buffer, "%s(%d){UNDEFINED}", name, call);
+static void decode_argument(unsigned int callno, const void* arg, char* buffer,
+                            const char* name, const SystemCallInfo* info) {
+  if (callno >= info->length || info->list[callno].name == NULL) {
+    sprintf(buffer, "%s(%d){UNDEFINED}", name, callno);
     return;
   }
 
-  strcpy(buffer, slice.array[call].name);
+  strcpy(buffer, info->list[callno].name);
   decode_argument_by_letter(buffer + strlen(buffer),
-                            slice.array[call].argletter, arg);
+                            info->list[callno].argletter, arg);
+}
+
+static unsigned int get_mode_argument(const void* arg, const char* mode) {
+  if (mode != NULL && mode[0] == 'l') {
+    return *(unsigned int*)arg;  // "l?"
+  }
+  return *(unsigned short*)arg;  // "w?"
+}
+
+char* Format_output(unsigned int doscall, void* arg) {
+  static char argbuf[256];
+  const SystemCall* dos = &HumanInfo.list[doscall];
+  const SystemCallInfo* sub;
+
+  if (dos->name == NULL) {
+    sprintf(argbuf, "dos(0x%02x){UNDEFINED}", doscall);
+    return argbuf;
+  }
+
+  sub = GetSubCallInfo(doscall);
+  if (sub) {
+    // モードによって引数の型が変わるDOSコールの処理
+    // ただし、fatchk、malloc2、malloc4、diskred、diskwrtは
+    // モード指定方法が特殊なので個別に処理する
+    switch (doscall) {
+      case 0x17:
+        fatchk(dos->name, arg, argbuf);
+        break;
+      case 0x58:  // v2_malloc2
+      case 0x60:  // v2_malloc4
+      case 0x88:  // malloc2
+      case 0x90:  // malloc4
+        malloc2(dos->name, arg, argbuf);
+        break;
+      case 0xf3:  // diskred
+      case 0xf4:  // diskwrt
+        disk(dos->name, arg, argbuf);
+        break;
+
+      default: {
+        unsigned int callno = get_mode_argument(arg, dos->argletter);
+        decode_argument(callno, arg, argbuf, dos->name, sub);
+      } break;
+    }
+  } else {
+    // 引数の型が一定なDOSコールの処理
+    strcpy(argbuf, dos->name);
+    decode_argument_by_letter(argbuf + strlen(argbuf), dos->argletter, arg);
+  }
+
+  return argbuf;
 }
 
 /* 文字列(またはアドレス)を表示する */

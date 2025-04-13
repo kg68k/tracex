@@ -23,13 +23,7 @@
 // _countof()
 #define C(array) (sizeof(array) / sizeof(array[0]))
 
-#define DEFINE_GET_SLICE(name)                                       \
-  SystemCallSlice get_##name##_call_slice(void) {                    \
-    SystemCallSlice slice = {C(name##_call_info), name##_call_info}; \
-    return slice;                                                    \
-  }
-
-static const SystemCall Human_call_info[256] = {
+static const SystemCall HumanList[256] = {
     {"exit", NULL},     // 0x00
     {"getchar", NULL},  // 0x01
     {"putchar", "w"},   // 0x02
@@ -302,9 +296,13 @@ static const SystemCall Human_call_info[256] = {
     {"time_pr", NULL},        // 0xfe
     {"change_pr", NULL},      // 0xff
 };
-DEFINE_GET_SLICE(Human);
+SystemCallInfo HumanInfo = {C(HumanList), HumanList, NULL};
 
-static const SystemCall Kflush_call_info[] = {
+static unsigned int GetModeWord(const void* arg) {
+  return *(const unsigned short*)arg;
+}
+
+static const SystemCall KflushList[] = {
     {"kflush", "w"},       //
     {"kflush{gp}", "w"},   //
     {NULL, NULL},          //
@@ -317,9 +315,9 @@ static const SystemCall Kflush_call_info[] = {
     {NULL, NULL},          //
     {"kflush{gs}", "wp"},
 };
-DEFINE_GET_SLICE(Kflush);
+static SystemCallInfo KflushInfo = {C(KflushList), KflushList, GetModeWord};
 
-static const SystemCall Hendsp_call_info[] = {
+static const SystemCall HendspList[] = {
     {"hendsp{mo}", "wwp"},  //
     {"hendsp{mp}", "wwp"},  //
     {"hendsp{mr}", "wwp"},  //
@@ -333,9 +331,14 @@ static const SystemCall Hendsp_call_info[] = {
     {"hendsp{sr}", "wwp"},  //
     {"hendsp{sc}", "w"},
 };
-DEFINE_GET_SLICE(Hendsp);
+static SystemCallInfo HendspInfo = {C(HendspList), HendspList, GetModeWord};
 
-static const SystemCall Knjctrl_call_info[] = {
+static unsigned int GetFpCallNo(const void* arg) {
+  unsigned int callno = *(const unsigned int*)arg;
+  return callno & 0xffff;  // ASK68Kでは上位ワードは無視される
+}
+
+static const SystemCall KnjctrlList[] = {
     {NULL, NULL},           // 0
     {"knjctrl", "ll"},      // 1
     {"knjctrl", "l"},       // 2
@@ -401,9 +404,9 @@ static const SystemCall Knjctrl_call_info[] = {
     {"knjctrl", "lpsl"},    // 62
     {"knjctrl", "lpll"},    // 63
 };
-DEFINE_GET_SLICE(Knjctrl);
+static SystemCallInfo KnjctrlInfo = {C(KnjctrlList), KnjctrlList, GetFpCallNo};
 
-static const SystemCall Conctrl_call_info[] = {
+static const SystemCall ConctrlList[] = {
     {"conctrl{putc}", "ww"},     //
     {"conctrl{print}", "ws"},    //
     {"conctrl{color}", "ww"},    //
@@ -424,18 +427,18 @@ static const SystemCall Conctrl_call_info[] = {
     {"conctrl{curon}", "w"},     //
     {"conctrl{curoff}", "w"},
 };
-DEFINE_GET_SLICE(Conctrl);
+static SystemCallInfo ConctrlInfo = {C(ConctrlList), ConctrlList, GetModeWord};
 
-static const SystemCall Keyctrl_call_info[] = {
+static const SystemCall KeyctrlList[] = {
     {"keyctrl{keyinp}", "w"},   //
     {"keyctrl{keysns}", "w"},   //
     {"keyctrl{sftsns}", "w"},   //
     {"keyctrl{keybit}", "ww"},  //
     {"keyctrl{insmod}", "ww"},
 };
-DEFINE_GET_SLICE(Keyctrl);
+static SystemCallInfo KeyctrlInfo = {C(KeyctrlList), KeyctrlList, GetModeWord};
 
-static const SystemCall Ioctrl_call_info[] = {
+static const SystemCall IoctrlList[] = {
     {"ioctrl{gt}", "ww"},
     {"ioctrl{st}", "www"},
     {"ioctrl{rh}", "wwll"},
@@ -451,9 +454,14 @@ static const SystemCall Ioctrl_call_info[] = {
     {"ioctrl{dvctl}", "wwwl"},
     {"ioctrl{fdctl}", "wwwl"},
 };
-DEFINE_GET_SLICE(Ioctrl);
+static SystemCallInfo IoctrlInfo = {C(IoctrlList), IoctrlList, GetModeWord};
 
-static const SystemCall Exec_call_info[] = {
+static unsigned int GetExecMode(const void* arg) {
+  unsigned short md = *(const unsigned short*)arg;
+  return md & 0x00ff;  // 上位バイトはモジュール番号
+}
+
+static const SystemCall ExecList[] = {
     {"exec{loadexec}", "wssp"},  //
     {"exec{load}", "wssp"},      //
     {"exec{pathchk}", "wspp"},   //
@@ -461,9 +469,9 @@ static const SystemCall Exec_call_info[] = {
     {"exec{execonly}", "wp"},    //
     {"exec{bindno}", "wss"},
 };
-DEFINE_GET_SLICE(Exec);
+static SystemCallInfo ExecInfo = {C(ExecList), ExecList, GetExecMode};
 
-static const SystemCall v2Common_call_info[] = {
+static const SystemCall v2CommonList[] = {
     {"v2_common{ck}", "ws"},      //
     {"v2_common{rd}", "wslll"},   //
     {"v2_common{wt}", "wslll"},   //
@@ -471,9 +479,10 @@ static const SystemCall v2Common_call_info[] = {
     {"v2_common{fre}", "wslll"},  //
     {"v2_common{del}", "ws"},
 };
-DEFINE_GET_SLICE(v2Common);
+static SystemCallInfo v2CommonInfo = {C(v2CommonList), v2CommonList,
+                                      GetModeWord};
 
-static const SystemCall Common_call_info[] = {
+static const SystemCall CommonList[] = {
     {"common{ck}", "ws"},      //
     {"common{rd}", "wslll"},   //
     {"common{wt}", "wslll"},   //
@@ -481,27 +490,28 @@ static const SystemCall Common_call_info[] = {
     {"common{fre}", "wslll"},  //
     {"common{del}", "ws"},
 };
-DEFINE_GET_SLICE(Common);
+static SystemCallInfo CommonInfo = {C(CommonList), CommonList, GetModeWord};
 
-static const SystemCall v2Assign_call_info[] = {
+static const SystemCall v2AssignList[] = {
     {"v2_assign{getassign}", "wsp"},
     {"v2_assign{makeassign}", "wssw"},
     {NULL, NULL},
     {NULL, NULL},
     {"v2_assign{rassign}", "ws"},
 };
-DEFINE_GET_SLICE(v2Assign);
+static SystemCallInfo v2AssignInfo = {C(v2AssignList), v2AssignList,
+                                      GetModeWord};
 
-static const SystemCall Assign_call_info[] = {
+static const SystemCall AssignList[] = {
     {"assign{getassign}", "wsp"},
     {"assign{makeassign}", "wssw"},
     {NULL, NULL},
     {NULL, NULL},
     {"assign{rassign}", "ws"},
 };
-DEFINE_GET_SLICE(Assign);
+static SystemCallInfo AssignInfo = {C(AssignList), AssignList, GetModeWord};
 
-static const SystemCall Twon_call_info[] = {
+static const SystemCall TwonList[] = {
     {"twon{getid}", "w"},     //
     {"twon{getver}", "w"},    //
     {"twon{getadr}", "w"},    //
@@ -511,12 +521,46 @@ static const SystemCall Twon_call_info[] = {
     {"twon{setsysr}", "ws"},  //
     {"twon{u2s}", "ww"},
 };
-DEFINE_GET_SLICE(Twon);
+static SystemCallInfo TwonInfo = {C(TwonList), TwonList, GetModeWord};
 
-static const SystemCall Mvdir_call_info[] = {
+static const SystemCall MvdirList[] = {
     {"mvdir{getid}", "w"},
     {"mvdir{getver}", "w"},
     {"mvdir{unhook}", "w"},
     {"mvdir{move}", "wss"},
 };
-DEFINE_GET_SLICE(Mvdir);
+static SystemCallInfo MvdirInfo = {C(MvdirList), MvdirList, GetModeWord};
+
+const SystemCallInfo* GetSubCallInfo(unsigned char callno) {
+  switch (callno) {
+    default:
+      break;
+    case 0x0c:
+      return &KflushInfo;
+    case 0x18:
+      return &HendspInfo;
+    case 0x22:
+      return &KnjctrlInfo;
+    case 0x23:
+      return &ConctrlInfo;
+    case 0x24:
+      return &KeyctrlInfo;
+    case 0x44:
+      return &IoctrlInfo;
+    case 0x4b:
+      return &ExecInfo;
+    case 0x55:
+      return &v2CommonInfo;
+    case 0x5f:
+      return &v2AssignInfo;
+    case 0x85:
+      return &CommonInfo;
+    case 0x8f:
+      return &AssignInfo;
+    case 0xb0:
+      return &TwonInfo;
+    case 0xb1:
+      return &MvdirInfo;
+  }
+  return NULL;
+}

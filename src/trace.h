@@ -5,11 +5,7 @@ extern void setup_doscall_handler(void);
 extern void restore_doscall_handler(void);
 
 /* argument.c */
-extern char *Format_output(int, void *);
-
-/* display.c */
-extern void display1(int, void *);
-extern void display2(int);
+extern char *Format_output(unsigned int, void *);
 
 /* trace.c */
 extern FILE *Stream;
