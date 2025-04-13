@@ -49,7 +49,7 @@ extern void display1(int callnum, void *arg) {
     }
 
     if (Last_instruction_not_return) {
-      fputs("=?\n", Stream);
+      fputs("=[[noreturn]]\n", Stream);
 
       if (!Option_A_flag && 1 == exec_flag && 0 == Doscall_nestlevel)
         exec_flag = 2;
