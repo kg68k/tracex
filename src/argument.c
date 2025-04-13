@@ -20,9 +20,17 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <ctype.h>
-#include <jctype.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef __HUMAN68K__
+#include <jctype.h>
+#else
+// Human68k以外のIDEでjctype.hがないという警告を消す細工
+extern int iskanji(int);
+extern int iskanji2(int);
+extern int isprkana(int);
+#endif
 
 #include "syscall.h"
 #include "trace.h"
