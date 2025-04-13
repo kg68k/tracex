@@ -317,6 +317,20 @@ static const SystemCall KflushList[] = {
 };
 static SystemCallInfo KflushInfo = {C(KflushList), KflushList, GetModeWord};
 
+static unsigned int GetFatchkMode(const void* arg) {
+  // BUFFER引数の最上位バイト
+  const unsigned char* buf0 = (const unsigned char*)arg + 4;
+
+  // 最上位ビットが1ならロングワードモード
+  return (*buf0 & 0x80) ? 1 : 0;
+}
+
+static const SystemCall FatchkList[] = {
+    {"fatchk", "sp"},      // ワードモード
+    {"fatchk{2}", "spw"},  // ロングワードモード
+};
+static SystemCallInfo FatchkInfo = {C(FatchkList), FatchkList, GetFatchkMode};
+
 static const SystemCall HendspList[] = {
     {"hendsp{mo}", "wwp"},  //
     {"hendsp{mp}", "wwp"},  //
@@ -492,6 +506,42 @@ static const SystemCall CommonList[] = {
 };
 static SystemCallInfo CommonInfo = {C(CommonList), CommonList, GetModeWord};
 
+static unsigned int GetMalloc2Mode(const void* arg) {
+  // MD引数の上位バイト
+  const unsigned char* md0 = (const unsigned char*)arg;
+
+  // 最上位ビットが1ならプロセス管理ポインタ指定モード
+  return (*md0 & 0x80) ? 1 : 0;
+}
+
+static const SystemCall v2Malloc2List[] = {
+    {"v2_malloc2", "wl"},      // 通常モード
+    {"v2_malloc2{2}", "wlp"},  // プロセス管理ポインタ指定モード
+};
+static SystemCallInfo v2Malloc2Info = {  //
+    C(v2Malloc2List), v2Malloc2List, GetMalloc2Mode};
+
+static const SystemCall v2Malloc4List[] = {
+    {"v2_malloc4", "wl"},      // 通常モード
+    {"v2_malloc4{2}", "wlp"},  // プロセス管理ポインタ指定モード
+};
+static SystemCallInfo v2Malloc4Info = {  //
+    C(v2Malloc4List), v2Malloc4List, GetMalloc2Mode};
+
+static const SystemCall Malloc2List[] = {
+    {"malloc2", "wl"},      // 通常モード
+    {"malloc2{2}", "wlp"},  // プロセス管理ポインタ指定モード
+};
+static SystemCallInfo Malloc2Info = {  //
+    C(Malloc2List), Malloc2List, GetMalloc2Mode};
+
+static const SystemCall Malloc4List[] = {
+    {"malloc4", "wl"},      // 通常モード
+    {"malloc4{2}", "wlp"},  // プロセス管理ポインタ指定モード
+};
+static SystemCallInfo Malloc4Info = {  //
+    C(Malloc4List), Malloc4List, GetMalloc2Mode};
+
 static const SystemCall v2AssignList[] = {
     {"v2_assign{getassign}", "wsp"},
     {"v2_assign{makeassign}", "wssw"},
@@ -531,12 +581,36 @@ static const SystemCall MvdirList[] = {
 };
 static SystemCallInfo MvdirInfo = {C(MvdirList), MvdirList, GetModeWord};
 
+static unsigned int GetDiskRWMode(const void* arg) {
+  // BUFFER引数の上位バイト
+  const unsigned char* buf0 = (const unsigned char*)arg;
+
+  // 最上位ビットが1ならロングワードモード
+  return (*buf0 & 0x80) ? 1 : 0;
+}
+
+static const SystemCall DiskredList[] = {
+    {"diskred", "pwww"},     // ワードモード
+    {"diskred{2}", "pwll"},  // ロングワードモード
+};
+static SystemCallInfo DiskredInfo = {  //
+    C(DiskredList), DiskredList, GetDiskRWMode};
+
+static const SystemCall DiskwrtList[] = {
+    {"diskwrt", "pwww"},     // ワードモード
+    {"diskwrt{2}", "pwll"},  // ロングワードモード
+};
+static SystemCallInfo DiskwrtInfo = {  //
+    C(DiskwrtList), DiskwrtList, GetDiskRWMode};
+
 const SystemCallInfo* GetSubCallInfo(unsigned char callno) {
   switch (callno) {
     default:
       break;
     case 0x0c:
       return &KflushInfo;
+    case 0x17:
+      return &FatchkInfo;
     case 0x18:
       return &HendspInfo;
     case 0x22:
@@ -551,16 +625,28 @@ const SystemCallInfo* GetSubCallInfo(unsigned char callno) {
       return &ExecInfo;
     case 0x55:
       return &v2CommonInfo;
+    case 0x58:
+      return &v2Malloc2Info;
     case 0x5f:
       return &v2AssignInfo;
+    case 0x62:
+      return &v2Malloc4Info;
     case 0x85:
       return &CommonInfo;
+    case 0x88:
+      return &Malloc2Info;
     case 0x8f:
       return &AssignInfo;
+    case 0x92:
+      return &Malloc4Info;
     case 0xb0:
       return &TwonInfo;
     case 0xb1:
       return &MvdirInfo;
+    case 0xf3:
+      return &DiskredInfo;
+    case 0xf4:
+      return &DiskwrtInfo;
   }
   return NULL;
 }

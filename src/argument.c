@@ -36,60 +36,6 @@
 static void decode_argument_by_letter(char* buffer, const char* argletter,
                                       const void* arg);
 
-// _countof()
-#define C(array) (sizeof(array) / sizeof(array[0]))
-
-static void fatchk(const char* name, void* arg, char* argbuf) {
-  char* argletter;
-
-  strcpy(argbuf, name);
-  argbuf += strlen(argbuf);
-
-  argletter = "sp";
-  if (*(short*)(arg + 4) < 0) {
-    *argbuf++ = '{';
-    *argbuf++ = '2';
-    *argbuf++ = '}';
-    argletter = "spw";
-  }
-
-  decode_argument_by_letter(argbuf, argletter, arg);
-}
-
-static void malloc2(const char* name, void* arg, char* argbuf) {
-  char* argletter;
-
-  strcpy(argbuf, name);
-  argbuf += strlen(argbuf);
-
-  argletter = "wl";
-  if (*(short*)arg < 0) {
-    *argbuf++ = '{';
-    *argbuf++ = '2';
-    *argbuf++ = '}';
-    argletter = "wlp";
-  }
-
-  decode_argument_by_letter(argbuf, argletter, arg);
-}
-
-static void disk(const char* name, void* arg, char* argbuf) {
-  char* argletter;
-
-  strcpy(argbuf, name);
-  argbuf += strlen(argbuf);
-
-  argletter = "pwww";
-  if (*(short*)arg < 0) {
-    *argbuf++ = '{';
-    *argbuf++ = '2';
-    *argbuf++ = '}';
-    argletter = "pwll";
-  }
-
-  decode_argument_by_letter(argbuf, argletter, arg);
-}
-
 static void decode_argument(unsigned int callno, const void* arg, char* buffer,
                             const char* name, const SystemCallInfo* info) {
   if (callno >= info->length || info->list[callno].name == NULL) {
@@ -100,13 +46,6 @@ static void decode_argument(unsigned int callno, const void* arg, char* buffer,
   strcpy(buffer, info->list[callno].name);
   decode_argument_by_letter(buffer + strlen(buffer),
                             info->list[callno].argletter, arg);
-}
-
-static unsigned int get_mode_argument(const void* arg, const char* mode) {
-  if (mode != NULL && mode[0] == 'l') {
-    return *(unsigned int*)arg;  // "l?"
-  }
-  return *(unsigned short*)arg;  // "w?"
 }
 
 char* Format_output(unsigned int doscall, void* arg) {
@@ -122,28 +61,8 @@ char* Format_output(unsigned int doscall, void* arg) {
   sub = GetSubCallInfo(doscall);
   if (sub) {
     // モードによって引数の型が変わるDOSコールの処理
-    // ただし、fatchk、malloc2、malloc4、diskred、diskwrtは
-    // モード指定方法が特殊なので個別に処理する
-    switch (doscall) {
-      case 0x17:
-        fatchk(dos->name, arg, argbuf);
-        break;
-      case 0x58:  // v2_malloc2
-      case 0x60:  // v2_malloc4
-      case 0x88:  // malloc2
-      case 0x90:  // malloc4
-        malloc2(dos->name, arg, argbuf);
-        break;
-      case 0xf3:  // diskred
-      case 0xf4:  // diskwrt
-        disk(dos->name, arg, argbuf);
-        break;
-
-      default: {
-        unsigned int callno = get_mode_argument(arg, dos->argletter);
-        decode_argument(callno, arg, argbuf, dos->name, sub);
-      } break;
-    }
+    unsigned int callno = sub->getSubCallNo(arg);
+    decode_argument(callno, arg, argbuf, dos->name, sub);
   } else {
     // 引数の型が一定なDOSコールの処理
     strcpy(argbuf, dos->name);
