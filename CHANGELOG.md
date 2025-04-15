@@ -18,6 +18,7 @@
   * ASK V2/V3の追加DOSコールに対応。
   * 060turbo.sys、(V)TwentyOne.sys、dos_mvdir.rのDOSコールに対応。
   * モードごとに引数が異なるDOSコールにおいて、モード値のマスクをHuman68kと同一となるよう改善。
+  * `DOS _IOCTRL`のMD=12、13の表記をそれぞれ`ioctrl{fdctl}`、`ioctrl{dvctl}`に修正。
 
 * DOSコールのエラーコード
   * DOSコールのエラーコード-34、-35、-80に対応。

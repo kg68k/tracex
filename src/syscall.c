@@ -465,8 +465,8 @@ static const SystemCall IoctrlList[] = {
     {"ioctrl{dvgt}", "ww"},
     {"ioctrl{fdgt}", "ww"},
     {"ioctrl{rtset}", "www"},
-    {"ioctrl{dvctl}", "wwwl"},
     {"ioctrl{fdctl}", "wwwl"},
+    {"ioctrl{dvctl}", "wwwl"},
 };
 static SystemCallInfo IoctrlInfo = {C(IoctrlList), IoctrlList, GetModeWord};
 
