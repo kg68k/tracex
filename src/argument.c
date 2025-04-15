@@ -144,6 +144,13 @@ static const void* advance(const void* arg, int n) {
   return (const void*)((const char*)arg + n);
 }
 
+static int formatWord(char* buf, const void** argptr) {
+  const void* arg = *argptr;
+  int v = *(unsigned short*)arg;
+  *argptr = advance(arg, 2);
+  return (v >= 10) ? sprintf(buf, "%d(%#x)", v, v) : sprintf(buf, "%d", v);
+}
+
 static void decode_argument_by_letter(char* buffer, const char* name,
                                       const char* argletter, const void* arg) {
   char temp[256];
@@ -158,10 +165,7 @@ static void decode_argument_by_letter(char* buffer, const char* name,
   while (*argletter) {
     switch (*argletter++) {
       case 'w': /* ワード値 */
-        buffer += sprintf(buffer, "%d", *(short*)arg);
-        if (*(unsigned short*)arg >= 10)
-          buffer += sprintf(buffer, "(%#x)", *(short*)arg & 0xffff);
-        arg = advance(arg, 2);
+        buffer += formatWord(buffer, &arg);
         break;
       case 'l': /* ロングワード値 */
         buffer += sprintf(buffer, "%d", *(int*)arg);
