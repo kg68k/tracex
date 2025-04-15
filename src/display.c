@@ -20,9 +20,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <stdio.h>
+
+#ifdef __HUMAN68K__
 #include <unistd.h>
+#endif
 
 #include "error.h"
+#include "syscall.h"
 #include "trace.h"
 
 #define CSRX (unsigned short *)(0x974)
@@ -36,6 +40,7 @@ static int Doscall_nestlevel = 0;
 static char Last_instruction_not_return = 0;
 static char exec_flag = 0;
 static char Flush_flag = 1;
+static SystemCallReturnType ReturnType = RET_INT;
 
 extern void display1(int callnum, void *arg) {
   const unsigned int callno = callnum & 0xff;
@@ -72,7 +77,7 @@ extern void display1(int callnum, void *arg) {
     }
   }
 
-  Formatted_string = Format_output(callno, arg);
+  Formatted_string = Format_output(callno, arg, &ReturnType);
 
   Last_instruction_not_return =
       (callno == 0 || callno == 0x4c || callno == 0x31);
@@ -87,6 +92,40 @@ extern void display1(int callnum, void *arg) {
   Flush_flag = 0; /* DOSコール実行中は 0 */
 }
 
+static void printResultValueInt(int result) {
+  if (0 <= result && result <= 9) {
+    fprintf(Stream, "=%d", result);
+  } else {
+    fprintf(Stream, "=%d(%#x)", result, result);
+  }
+}
+
+static void printResultValueHex(int result) {
+  if ((unsigned int)result < 0xffff0000) {
+    fprintf(Stream, "=%#x", result);
+  } else {
+    fprintf(Stream, "=%d(%#x)", result, result);
+  }
+}
+
+static void printResultValue(SystemCallReturnType retType, int result) {
+  switch (retType) {
+    case RET_INT:
+      printResultValueInt(result);
+      break;
+
+      // syscall.cのデータでは区別しているが、現状では表示形式は同じ
+    case RET_HEX:
+    case RET_PTR:
+      printResultValueHex(result);
+      break;
+
+    case RET_VOID:
+    default:
+      break;
+  }
+}
+
 extern void display2(int result) {
   if (Flush_flag) Doscall_nestlevel--;
 
@@ -98,9 +137,7 @@ extern void display2(int result) {
     else
       fputs(Formatted_string, Stream);
 
-    fprintf(Stream, "=%d", result);
-    if ((unsigned long)result >= 10) fprintf(Stream, "(%#x)", result);
-
+    printResultValue(ReturnType, result);
     if (result < 0) {
       const char *msg = get_human_error_message(result);
       if (msg) {

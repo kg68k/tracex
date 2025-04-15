@@ -19,9 +19,17 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
+typedef enum {
+  RET_INT,
+  RET_HEX,
+  RET_PTR,
+  RET_VOID,
+} SystemCallReturnType;
+
 typedef struct {
   const char* name;
   const char* argletter;
+  SystemCallReturnType returnType;
 } SystemCall;
 
 typedef struct {

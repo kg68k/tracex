@@ -44,25 +44,31 @@ extern int isprkana(int);
 static void decode_argument_by_letter(char* buffer, const char* name,
                                       const char* argletter, const void* arg);
 
-static void format_sub(const SystemCallInfo* sub, const void* arg, char* buffer,
-                       const char* name) {
-  unsigned int callno = sub->getSubCallNo(arg);
+static SystemCallReturnType format_sub(const SystemCallInfo* sub,
+                                       const void* arg, char* buffer,
+                                       const char* name) {
+  const unsigned int callno = sub->getSubCallNo(arg);
+  const int isValid = (callno < sub->length);
 
-  if (callno >= sub->length || sub->list[callno].name == NULL) {
+  if (!isValid || sub->list[callno].name == NULL) {
     sprintf(buffer, "%s(%d){UNDEFINED}", name, callno);
-    return;
+    return isValid ? sub->list[callno].returnType : RET_INT;
   }
 
   decode_argument_by_letter(buffer, sub->list[callno].name,
                             sub->list[callno].argletter, arg);
+  return sub->list[callno].returnType;
 }
 
-char* Format_output(unsigned int doscall, void* arg) {
+char* Format_output(unsigned int doscall, void* arg,
+                    SystemCallReturnType* retType) {
   static char argbuf[256];
   char* writeptr = argbuf;
 
   const SystemCall* dos = &HumanInfo.list[doscall];
   const SystemCallInfo* sub;
+
+  *retType = dos->returnType;
 
   if (dos->name == NULL) {
     sprintf(argbuf, "dos(0x%02x){UNDEFINED}", doscall);
@@ -78,7 +84,7 @@ char* Format_output(unsigned int doscall, void* arg) {
   sub = GetSubCallInfo(doscall);
   if (sub) {
     // モードによって引数の型が変わるDOSコールの処理
-    format_sub(sub, arg, writeptr, dos->name);
+    *retType = format_sub(sub, arg, writeptr, dos->name);
   } else {
     // 引数の型が一定なDOSコールの処理
     decode_argument_by_letter(writeptr, dos->name, dos->argletter, arg);
