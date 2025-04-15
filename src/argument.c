@@ -87,6 +87,21 @@ char* Format_output(unsigned int doscall, void* arg) {
   return argbuf;
 }
 
+static char* escapeContrlCode(unsigned char c, char* buf) {
+  static const char escChars[] = {
+      0, 0, 0, 0, 0, 0, 0, 'a', 'b', 't', 'n', 'v', 'f', 'r'  //
+  };
+
+  if (c < sizeof(escChars) && escChars[c]) {
+    *buf++ = '\\';
+    *buf++ = escChars[c];
+  } else {
+    buf += sprintf(buf, "\\x%02x", c);
+  }
+
+  return buf;
+}
+
 /* 文字列(またはアドレス)を表示する */
 static void escape(char* str, char* buffer) {
   unsigned char* p = str;
@@ -98,17 +113,23 @@ static void escape(char* str, char* buffer) {
   }
 
   *buffer++ = '\"';
-  for (count = 0; *p && count < 32; p++, count++) {
-    if (isprkana(*p))
-      *buffer++ = *p;
-    else if (iscntrl(*p))
-      buffer += sprintf(buffer, "\\x%02x", *p);
-    else if (iskanji(p[0]) && iskanji2(p[1])) {
+  for (count = 0; *p && count < 32; count++) {
+    unsigned char c = *p++;
+
+    if (isprkana(c)) {
+      if (c == '\\' || c == '\"' || c == '\'') {
+        *buffer++ = '\\';
+      }
+      *buffer++ = c;
+    } else if (iscntrl(c)) {
+      buffer = escapeContrlCode(c, buffer);
+    } else if (iskanji(c) && iskanji2(*p)) {
+      *buffer++ = c;
       *buffer++ = *p++;
-      *buffer++ = *p;
       count++;
-    } else
+    } else {
       *buffer++ = '.';
+    }
   }
   *buffer++ = '\"';
 
