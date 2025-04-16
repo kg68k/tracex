@@ -156,7 +156,7 @@ static const SystemCall HumanList[256] = {
     {"fflushflg", "w", RET_INT},     // 0x7a
     {"ospatch", "wp", RET_PTR},      // 0x7b
     {"getfcb", "w", RET_PTR},        // 0x7c
-    {"s_malloc", "wl", RET_PTR},     // 0x7d
+    {"s_malloc", "wl?", RET_PTR},    // 0x7d
     {"s_mfree", "p", RET_INT},       // 0x7e
     {"s_process", "wpll", RET_PTR},  // 0x7f
 
@@ -207,7 +207,7 @@ static const SystemCall HumanList[256] = {
     {"fflushflg", "w", RET_INT},     // 0xaa
     {"ospatch", "wp", RET_PTR},      // 0xab
     {"getfcb", "w", RET_PTR},        // 0xac
-    {"s_malloc", "wl", RET_PTR},     // 0xad
+    {"s_malloc", "wl?", RET_PTR},    // 0xad
     {"s_mfree", "p", RET_INT},       // 0xae
     {"s_process", "wpll", RET_PTR},  // 0xaf
 
@@ -517,6 +517,13 @@ static const SystemCall Malloc4List[] = {
 static SystemCallInfo Malloc4Info = {  //
     C(Malloc4List), Malloc4List, GetMalloc2Mode};
 
+static const SystemCall SMallocList[] = {
+    {"s_malloc", "wl", RET_PTR},      // 通常モード
+    {"s_malloc{2}", "wlp", RET_PTR},  // プロセス管理ポインタ指定モード
+};
+static SystemCallInfo SMallocInfo = {  //
+    C(SMallocList), SMallocList, GetMalloc2Mode};
+
 static const SystemCall AssignList[] = {
     {"assign{getassign}", "wsp", RET_HEX},
     {"assign{makeassign}", "wssw", RET_INT},
@@ -600,6 +607,9 @@ const SystemCallInfo* GetSubCallInfo(unsigned char callno) {
     case 0x62:
     case 0x92:
       return &Malloc4Info;
+    case 0x7d:
+    case 0xad:
+      return &SMallocInfo;
     case 0xb0:
       return &TwonInfo;
     case 0xb1:
