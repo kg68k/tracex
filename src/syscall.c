@@ -126,22 +126,22 @@ static const SystemCall HumanList[256] = {
     {NULL, NULL, RET_INT},        // 0x5e
     {"assign", "w?", RET_INT},    // 0x5f
 
-    {"malloc3", "l", RET_PTR},     // 0x60 (060turbo.sys)
-    {"setblock2", "pl", RET_HEX},  // 0x61 (060turbo.sys)
-    {"malloc4", "wl?", RET_PTR},   // 0x62 (060turbo.sys)
-    {NULL, NULL, RET_INT},         // 0x63
-    {NULL, NULL, RET_INT},         // 0x64
-    {NULL, NULL, RET_INT},         // 0x65
-    {NULL, NULL, RET_INT},         // 0x66
-    {NULL, NULL, RET_INT},         // 0x67
-    {NULL, NULL, RET_INT},         // 0x68
-    {NULL, NULL, RET_INT},         // 0x69
-    {NULL, NULL, RET_INT},         // 0x6a
-    {NULL, NULL, RET_INT},         // 0x6b
-    {NULL, NULL, RET_INT},         // 0x6c
-    {NULL, NULL, RET_INT},         // 0x6d
-    {NULL, NULL, RET_INT},         // 0x6e
-    {NULL, NULL, RET_INT},         // 0x6f
+    {"malloc3", "l", RET_PTR},      // 0x60 (060turbo.sys)
+    {"setblock2", "pl", RET_HEX},   // 0x61 (060turbo.sys)
+    {"malloc4", "wl?", RET_PTR},    // 0x62 (060turbo.sys)
+    {"s_malloc2", "wl?", RET_PTR},  // 0x63 (060turbo.sys)
+    {NULL, NULL, RET_INT},          // 0x64
+    {NULL, NULL, RET_INT},          // 0x65
+    {NULL, NULL, RET_INT},          // 0x66
+    {NULL, NULL, RET_INT},          // 0x67
+    {NULL, NULL, RET_INT},          // 0x68
+    {NULL, NULL, RET_INT},          // 0x69
+    {NULL, NULL, RET_INT},          // 0x6a
+    {NULL, NULL, RET_INT},          // 0x6b
+    {NULL, NULL, RET_INT},          // 0x6c
+    {NULL, NULL, RET_INT},          // 0x6d
+    {NULL, NULL, RET_INT},          // 0x6e
+    {NULL, NULL, RET_INT},          // 0x6f
 
     {NULL, NULL, RET_INT},           // 0x70
     {NULL, NULL, RET_INT},           // 0x71
@@ -177,22 +177,22 @@ static const SystemCall HumanList[256] = {
     {NULL, NULL, RET_INT},        // 0x8e
     {"assign", "w?", RET_INT},    // 0x8f
 
-    {"malloc3", "l", RET_PTR},     // 0x90 (060turbo.sys)
-    {"setblock2", "pl", RET_HEX},  // 0x91 (060turbo.sys)
-    {"malloc4", "wl?", RET_PTR},   // 0x92 (060turbo.sys)
-    {NULL, NULL, RET_INT},         // 0x93
-    {NULL, NULL, RET_INT},         // 0x94
-    {NULL, NULL, RET_INT},         // 0x95
-    {NULL, NULL, RET_INT},         // 0x96
-    {NULL, NULL, RET_INT},         // 0x97
-    {NULL, NULL, RET_INT},         // 0x98
-    {NULL, NULL, RET_INT},         // 0x99
-    {NULL, NULL, RET_INT},         // 0x9a
-    {NULL, NULL, RET_INT},         // 0x9b
-    {NULL, NULL, RET_INT},         // 0x9c
-    {NULL, NULL, RET_INT},         // 0x9d
-    {NULL, NULL, RET_INT},         // 0x9e
-    {NULL, NULL, RET_INT},         // 0x9f
+    {"malloc3", "l", RET_PTR},      // 0x90 (060turbo.sys)
+    {"setblock2", "pl", RET_HEX},   // 0x91 (060turbo.sys)
+    {"malloc4", "wl?", RET_PTR},    // 0x92 (060turbo.sys)
+    {"s_malloc2", "wl?", RET_PTR},  // 0x93 (060turbo.sys)
+    {NULL, NULL, RET_INT},          // 0x94
+    {NULL, NULL, RET_INT},          // 0x95
+    {NULL, NULL, RET_INT},          // 0x96
+    {NULL, NULL, RET_INT},          // 0x97
+    {NULL, NULL, RET_INT},          // 0x98
+    {NULL, NULL, RET_INT},          // 0x99
+    {NULL, NULL, RET_INT},          // 0x9a
+    {NULL, NULL, RET_INT},          // 0x9b
+    {NULL, NULL, RET_INT},          // 0x9c
+    {NULL, NULL, RET_INT},          // 0x9d
+    {NULL, NULL, RET_INT},          // 0x9e
+    {NULL, NULL, RET_INT},          // 0x9f
 
     {NULL, NULL, RET_INT},           // 0xa0
     {NULL, NULL, RET_INT},           // 0xa1
@@ -517,6 +517,13 @@ static const SystemCall Malloc4List[] = {
 static SystemCallInfo Malloc4Info = {  //
     C(Malloc4List), Malloc4List, GetMalloc2Mode};
 
+static const SystemCall SMalloc2List[] = {
+    {"s_malloc2", "wl", RET_PTR},      // 通常モード
+    {"s_malloc2{2}", "wlp", RET_PTR},  // プロセス管理ポインタ指定モード
+};
+static SystemCallInfo SMalloc2Info = {  //
+    C(SMalloc2List), SMalloc2List, GetMalloc2Mode};
+
 static const SystemCall SMallocList[] = {
     {"s_malloc", "wl", RET_PTR},      // 通常モード
     {"s_malloc{2}", "wlp", RET_PTR},  // プロセス管理ポインタ指定モード
@@ -607,6 +614,9 @@ const SystemCallInfo* GetSubCallInfo(unsigned char callno) {
     case 0x62:
     case 0x92:
       return &Malloc4Info;
+    case 0x63:
+    case 0x93:
+      return &SMalloc2Info;
     case 0x7d:
     case 0xad:
       return &SMallocInfo;
