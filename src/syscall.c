@@ -66,7 +66,7 @@ static const SystemCall HumanList[256] = {
     {"intvcs", "hp", RET_PTR},   // 0x25
     {"pspset", "p", RET_INT},    // 0x26
     {"gettim2", NULL, RET_HEX},  // 0x27
-    {"settim2", "l", RET_INT},   // 0x28
+    {"settim2", "x", RET_INT},   // 0x28
     {"namests", "sp", RET_INT},  // 0x29
     {"getdate", NULL, RET_HEX},  // 0x2a
     {"setdate", "h", RET_INT},   // 0x2b
@@ -116,7 +116,7 @@ static const SystemCall HumanList[256] = {
     {"verifyg", NULL, RET_INT},   // 0x54
     {"common", "w?", RET_INT},    // 0x55
     {"rename", "ss", RET_INT},    // 0x56
-    {"filedate", "wl", RET_HEX},  // 0x57
+    {"filedate", "wx", RET_HEX},  // 0x57
     {"malloc2", "hl?", RET_PTR},  // 0x58
     {NULL, NULL, RET_INT},        // 0x59
     {"maketmp", "sh", RET_INT},   // 0x5a
@@ -167,7 +167,7 @@ static const SystemCall HumanList[256] = {
     {"verifyg", NULL, RET_INT},   // 0x84
     {"common", "w?", RET_INT},    // 0x85
     {"rename", "ss", RET_INT},    // 0x86
-    {"filedate", "wl", RET_HEX},  // 0x87
+    {"filedate", "wx", RET_HEX},  // 0x87
     {"malloc2", "hl?", RET_PTR},  // 0x88
     {NULL, NULL, RET_INT},        // 0x89
     {"maketmp", "sh", RET_INT},   // 0x8a

@@ -154,14 +154,29 @@ static int formatWord(char* buf, const void** argptr) {
   const void* arg = *argptr;
   int v = *(unsigned short*)arg;
   *argptr = advance(arg, 2);
-  return (v >= 10) ? sprintf(buf, "%d(%#x)", v, v) : sprintf(buf, "%d", v);
+  return (v < 10) ? sprintf(buf, "%d", v) : sprintf(buf, "%d(%#x)", v, v);
 }
 
 static int formatWordHex(char* buf, const void** argptr) {
   const void* arg = *argptr;
   int v = *(unsigned short*)arg;
   *argptr = advance(arg, 2);
-  return (v >= 10) ? sprintf(buf, "%#x", v) : sprintf(buf, "%x", v);
+  return (v < 10) ? sprintf(buf, "%x", v) : sprintf(buf, "%#x", v);
+}
+
+static int formatLong(char* buf, const void** argptr) {
+  const void* arg = *argptr;
+  unsigned int v = *(unsigned int*)arg;
+  *argptr = advance(arg, 4);
+  return (v < 10) ? sprintf(buf, "%d", (int)v)
+                  : sprintf(buf, "%d(%#x)", (int)v, v);
+}
+
+static int formatLongHex(char* buf, const void** argptr) {
+  const void* arg = *argptr;
+  unsigned int v = *(unsigned int*)arg;
+  *argptr = advance(arg, 4);
+  return (v < 10) ? sprintf(buf, "%d", (int)v) : sprintf(buf, "%#x", v);
 }
 
 static void decode_argument_by_letter(char* buffer, const char* name,
@@ -183,10 +198,11 @@ static void decode_argument_by_letter(char* buffer, const char* name,
       case 'h':  // ワード値(16進数表記)
         buffer += formatWordHex(buffer, &arg);
         break;
-      case 'l': /* ロングワード値 */
-        buffer += sprintf(buffer, "%d", *(int*)arg);
-        if (*(long*)arg >= 10) buffer += sprintf(buffer, "(%#x)", *(int*)arg);
-        arg = advance(arg, 4);
+      case 'l':  // ロングワード値
+        buffer += formatLong(buffer, &arg);
+        break;
+      case 'x':  // ロングワード値(16進数表記)
+        buffer += formatLongHex(buffer, &arg);
         break;
       case 'p': /* ポインタ */
         if ((void*)*(long*)arg)
