@@ -26,17 +26,17 @@
 static const SystemCall HumanList[256] = {
     {"exit", NULL, RET_VOID},    // 0x00
     {"getchar", NULL, RET_INT},  // 0x01
-    {"putchar", "w", RET_INT},   // 0x02
+    {"putchar", "h", RET_INT},   // 0x02
     {"cominp", NULL, RET_INT},   // 0x03
-    {"comout", "w", RET_INT},    // 0x04
-    {"prnout", "w", RET_INT},    // 0x05
-    {"inpout", "w", RET_INT},    // 0x06
+    {"comout", "h", RET_INT},    // 0x04
+    {"prnout", "h", RET_INT},    // 0x05
+    {"inpout", "h", RET_INT},    // 0x06
     {"inkey", NULL, RET_INT},    // 0x07
     {"getc", NULL, RET_INT},     // 0x08
     {"print", "s", RET_INT},     // 0x09
     {"gets", "p", RET_INT},      // 0x0a
     {"keysns", NULL, RET_INT},   // 0x0b
-    {"kflush", "w?", RET_INT},   // 0x0c
+    {"kflush", "h?", RET_INT},   // 0x0c
     {"fflush", NULL, RET_INT},   // 0x0d
     {"chgdrv", "w", RET_INT},    // 0x0e
     {"drvctrl", "w", RET_INT},   // 0x0f
@@ -63,15 +63,15 @@ static const SystemCall HumanList[256] = {
     {"knjctrl", "l?", RET_INT},  // 0x22
     {"conctrl", "w?", RET_INT},  // 0x23
     {"keyctrl", "w?", RET_INT},  // 0x24
-    {"intvcs", "wp", RET_PTR},   // 0x25
+    {"intvcs", "hp", RET_PTR},   // 0x25
     {"pspset", "p", RET_INT},    // 0x26
     {"gettim2", NULL, RET_HEX},  // 0x27
     {"settim2", "l", RET_INT},   // 0x28
     {"namests", "sp", RET_INT},  // 0x29
     {"getdate", NULL, RET_HEX},  // 0x2a
-    {"setdate", "w", RET_INT},   // 0x2b
+    {"setdate", "h", RET_INT},   // 0x2b
     {"gettime", NULL, RET_HEX},  // 0x2c
-    {"settime", "w", RET_INT},   // 0x2d
+    {"settime", "h", RET_INT},   // 0x2d
     {"verify", "w", RET_INT},    // 0x2e
     {"dup0", "ww", RET_INT},     // 0x2f
 
@@ -80,22 +80,22 @@ static const SystemCall HumanList[256] = {
     {"getdpb", "wp", RET_INT},   // 0x32
     {"breakck", "w", RET_INT},   // 0x33
     {"drvxchg", "ww", RET_INT},  // 0x34
-    {"intvcg", "w", RET_PTR},    // 0x35
+    {"intvcg", "h", RET_PTR},    // 0x35
     {"dskfre", "wp", RET_INT},   // 0x36
     {"nameck", "sp", RET_INT},   // 0x37
     {NULL, NULL, RET_INT},       // 0x38
     {"mkdir", "s", RET_INT},     // 0x39
     {"rmdir", "s", RET_INT},     // 0x3a
     {"chdir", "s", RET_INT},     // 0x3b
-    {"create", "sw", RET_INT},   // 0x3c
-    {"open", "sw", RET_INT},     // 0x3d
+    {"create", "sh", RET_INT},   // 0x3c
+    {"open", "sh", RET_INT},     // 0x3d
     {"close", "w", RET_INT},     // 0x3e
     {"read", "wpl", RET_INT},    // 0x3f
 
     {"write", "wpl", RET_INT},    // 0x40
     {"delete", "s", RET_INT},     // 0x41
     {"seek", "wlw", RET_INT},     // 0x42
-    {"chmod", "sw", RET_INT},     // 0x43
+    {"chmod", "sh", RET_INT},     // 0x43
     {"ioctrl", "w?", RET_INT},    // 0x44
     {"dup", "w", RET_INT},        // 0x45
     {"dup2", "ww", RET_INT},      // 0x46
@@ -103,10 +103,10 @@ static const SystemCall HumanList[256] = {
     {"malloc", "l", RET_PTR},     // 0x48
     {"mfree", "p", RET_INT},      // 0x49
     {"setblock", "pl", RET_HEX},  // 0x4a
-    {"exec", "w?", RET_INT},      // 0x4b
+    {"exec", "h?", RET_INT},      // 0x4b
     {"exit2", "w", RET_VOID},     // 0x4c
     {"wait", NULL, RET_INT},      // 0x4d
-    {"files", "psw", RET_INT},    // 0x4e
+    {"files", "psh", RET_INT},    // 0x4e
     {"nfiles", "p", RET_INT},     // 0x4f
 
     {"setpdb", "p", RET_PTR},     // 0x50
@@ -117,10 +117,10 @@ static const SystemCall HumanList[256] = {
     {"common", "w?", RET_INT},    // 0x55
     {"rename", "ss", RET_INT},    // 0x56
     {"filedate", "wl", RET_HEX},  // 0x57
-    {"malloc2", "wl?", RET_PTR},  // 0x58
+    {"malloc2", "hl?", RET_PTR},  // 0x58
     {NULL, NULL, RET_INT},        // 0x59
-    {"maketmp", "sw", RET_INT},   // 0x5a
-    {"newfile", "sw", RET_INT},   // 0x5b
+    {"maketmp", "sh", RET_INT},   // 0x5a
+    {"newfile", "sh", RET_INT},   // 0x5b
     {"lock", "wwll", RET_INT},    // 0x5c
     {NULL, NULL, RET_INT},        // 0x5d
     {NULL, NULL, RET_INT},        // 0x5e
@@ -128,8 +128,8 @@ static const SystemCall HumanList[256] = {
 
     {"malloc3", "l", RET_PTR},      // 0x60 (060turbo.sys)
     {"setblock2", "pl", RET_HEX},   // 0x61 (060turbo.sys)
-    {"malloc4", "wl?", RET_PTR},    // 0x62 (060turbo.sys)
-    {"s_malloc2", "wl?", RET_PTR},  // 0x63 (060turbo.sys)
+    {"malloc4", "hl?", RET_PTR},    // 0x62 (060turbo.sys)
+    {"s_malloc2", "hl?", RET_PTR},  // 0x63 (060turbo.sys)
     {NULL, NULL, RET_INT},          // 0x64
     {NULL, NULL, RET_INT},          // 0x65
     {NULL, NULL, RET_INT},          // 0x66
@@ -156,7 +156,7 @@ static const SystemCall HumanList[256] = {
     {"fflushflg", "w", RET_INT},     // 0x7a
     {"ospatch", "wp", RET_PTR},      // 0x7b
     {"getfcb", "w", RET_PTR},        // 0x7c
-    {"s_malloc", "wl?", RET_PTR},    // 0x7d
+    {"s_malloc", "hl?", RET_PTR},    // 0x7d
     {"s_mfree", "p", RET_INT},       // 0x7e
     {"s_process", "wpll", RET_PTR},  // 0x7f
 
@@ -168,10 +168,10 @@ static const SystemCall HumanList[256] = {
     {"common", "w?", RET_INT},    // 0x85
     {"rename", "ss", RET_INT},    // 0x86
     {"filedate", "wl", RET_HEX},  // 0x87
-    {"malloc2", "wl?", RET_PTR},  // 0x88
+    {"malloc2", "hl?", RET_PTR},  // 0x88
     {NULL, NULL, RET_INT},        // 0x89
-    {"maketmp", "sw", RET_INT},   // 0x8a
-    {"newfile", "sw", RET_INT},   // 0x8b
+    {"maketmp", "sh", RET_INT},   // 0x8a
+    {"newfile", "sh", RET_INT},   // 0x8b
     {"lock", "wwll", RET_INT},    // 0x8c
     {NULL, NULL, RET_INT},        // 0x8d
     {NULL, NULL, RET_INT},        // 0x8e
@@ -179,8 +179,8 @@ static const SystemCall HumanList[256] = {
 
     {"malloc3", "l", RET_PTR},      // 0x90 (060turbo.sys)
     {"setblock2", "pl", RET_HEX},   // 0x91 (060turbo.sys)
-    {"malloc4", "wl?", RET_PTR},    // 0x92 (060turbo.sys)
-    {"s_malloc2", "wl?", RET_PTR},  // 0x93 (060turbo.sys)
+    {"malloc4", "hl?", RET_PTR},    // 0x92 (060turbo.sys)
+    {"s_malloc2", "hl?", RET_PTR},  // 0x93 (060turbo.sys)
     {NULL, NULL, RET_INT},          // 0x94
     {NULL, NULL, RET_INT},          // 0x95
     {NULL, NULL, RET_INT},          // 0x96
@@ -207,7 +207,7 @@ static const SystemCall HumanList[256] = {
     {"fflushflg", "w", RET_INT},     // 0xaa
     {"ospatch", "wp", RET_PTR},      // 0xab
     {"getfcb", "w", RET_PTR},        // 0xac
-    {"s_malloc", "wl?", RET_PTR},    // 0xad
+    {"s_malloc", "hl?", RET_PTR},    // 0xad
     {"s_mfree", "p", RET_INT},       // 0xae
     {"s_process", "wpll", RET_PTR},  // 0xaf
 
@@ -287,12 +287,12 @@ static const SystemCall HumanList[256] = {
     {"indosflg", NULL, RET_PTR},       // 0xf5
     {"super_jsr", "p", RET_INT},       // 0xf6
     {"bus_err", "ppw", RET_INT},       // 0xf7
-    {"open_pr", "swppwppl", RET_INT},  // 0xf8
+    {"open_pr", "swpphppl", RET_INT},  // 0xf8
     {"kill_pr", NULL, RET_VOID},       // 0xf9
     {"get_pr", "wp", RET_INT},         // 0xfa
     {"suspend_pr", "w", RET_INT},      // 0xfb
     {"sleep_pr", "l", RET_INT},        // 0xfc
-    {"send_pr", "wwwpl", RET_INT},     // 0xfd
+    {"send_pr", "wwhpl", RET_INT},     // 0xfd
     {"time_pr", NULL, RET_INT},        // 0xfe
     {"change_pr", NULL, RET_INT},      // 0xff
 };
@@ -303,17 +303,17 @@ static unsigned int GetModeWord(const void* arg) {
 }
 
 static const SystemCall KflushList[] = {
-    {"kflush", "w", RET_INT},       //
-    {"kflush{gp}", "w", RET_INT},   //
+    {"kflush", "h", RET_INT},       //
+    {"kflush{gp}", "h", RET_INT},   //
     {NULL, NULL, RET_INT},          //
     {NULL, NULL, RET_INT},          //
     {NULL, NULL, RET_INT},          //
     {NULL, NULL, RET_INT},          //
-    {"kflush{io}", "ww", RET_INT},  //
-    {"kflush{in}", "w", RET_INT},   //
-    {"kflush{gc}", "w", RET_INT},   //
+    {"kflush{io}", "hh", RET_INT},  //
+    {"kflush{in}", "h", RET_INT},   //
+    {"kflush{gc}", "h", RET_INT},   //
     {NULL, NULL, RET_INT},          //
-    {"kflush{gs}", "wp", RET_INT},
+    {"kflush{gs}", "hp", RET_INT},
 };
 static SystemCallInfo KflushInfo = {C(KflushList), KflushList, GetModeWord};
 
@@ -421,9 +421,9 @@ static const SystemCall KnjctrlList[] = {
 static SystemCallInfo KnjctrlInfo = {C(KnjctrlList), KnjctrlList, GetFpCallNo};
 
 static const SystemCall ConctrlList[] = {
-    {"conctrl{putc}", "ww", RET_HEX},     //
+    {"conctrl{putc}", "wh", RET_HEX},     //
     {"conctrl{print}", "ws", RET_HEX},    //
-    {"conctrl{color}", "ww", RET_HEX},    //
+    {"conctrl{color}", "wh", RET_HEX},    //
     {"conctrl{locate}", "www", RET_HEX},  //
     {"conctrl{down_s}", "w", RET_INT},    //
     {"conctrl{up_s}", "w", RET_INT},      //
@@ -454,7 +454,7 @@ static SystemCallInfo KeyctrlInfo = {C(KeyctrlList), KeyctrlList, GetModeWord};
 
 static const SystemCall IoctrlList[] = {
     {"ioctrl{gt}", "ww", RET_HEX},
-    {"ioctrl{st}", "www", RET_HEX},
+    {"ioctrl{st}", "wwh", RET_HEX},
     {"ioctrl{rh}", "wwll", RET_INT},
     {"ioctrl{wh}", "wwll", RET_INT},
     {"ioctrl{rd}", "wwll", RET_INT},
@@ -476,12 +476,12 @@ static unsigned int GetExecMode(const void* arg) {
 }
 
 static const SystemCall ExecList[] = {
-    {"exec{loadexec}", "wssp", RET_INT},  //
-    {"exec{load}", "wssp", RET_PTR},      //
-    {"exec{pathchk}", "wspp", RET_INT},   //
-    {"exec{loadonly}", "wspp", RET_INT},  //
-    {"exec{execonly}", "wp", RET_INT},    //
-    {"exec{bindno}", "wss", RET_HEX},
+    {"exec{loadexec}", "hssp", RET_INT},  //
+    {"exec{load}", "hssp", RET_PTR},      //
+    {"exec{pathchk}", "hspp", RET_INT},   //
+    {"exec{loadonly}", "hspp", RET_INT},  //
+    {"exec{execonly}", "hp", RET_INT},    //
+    {"exec{bindno}", "hss", RET_HEX},
 };
 static SystemCallInfo ExecInfo = {C(ExecList), ExecList, GetExecMode};
 
@@ -504,36 +504,36 @@ static unsigned int GetMalloc2Mode(const void* arg) {
 }
 
 static const SystemCall Malloc2List[] = {
-    {"malloc2", "wl", RET_PTR},      // 通常モード
-    {"malloc2{2}", "wlp", RET_PTR},  // プロセス管理ポインタ指定モード
+    {"malloc2", "hl", RET_PTR},      // 通常モード
+    {"malloc2{2}", "hlp", RET_PTR},  // プロセス管理ポインタ指定モード
 };
 static SystemCallInfo Malloc2Info = {  //
     C(Malloc2List), Malloc2List, GetMalloc2Mode};
 
 static const SystemCall Malloc4List[] = {
-    {"malloc4", "wl", RET_PTR},      // 通常モード
-    {"malloc4{2}", "wlp", RET_PTR},  // プロセス管理ポインタ指定モード
+    {"malloc4", "hl", RET_PTR},      // 通常モード
+    {"malloc4{2}", "hlp", RET_PTR},  // プロセス管理ポインタ指定モード
 };
 static SystemCallInfo Malloc4Info = {  //
     C(Malloc4List), Malloc4List, GetMalloc2Mode};
 
 static const SystemCall SMalloc2List[] = {
-    {"s_malloc2", "wl", RET_PTR},      // 通常モード
-    {"s_malloc2{2}", "wlp", RET_PTR},  // プロセス管理ポインタ指定モード
+    {"s_malloc2", "hl", RET_PTR},      // 通常モード
+    {"s_malloc2{2}", "hlp", RET_PTR},  // プロセス管理ポインタ指定モード
 };
 static SystemCallInfo SMalloc2Info = {  //
     C(SMalloc2List), SMalloc2List, GetMalloc2Mode};
 
 static const SystemCall SMallocList[] = {
-    {"s_malloc", "wl", RET_PTR},      // 通常モード
-    {"s_malloc{2}", "wlp", RET_PTR},  // プロセス管理ポインタ指定モード
+    {"s_malloc", "hl", RET_PTR},      // 通常モード
+    {"s_malloc{2}", "hlp", RET_PTR},  // プロセス管理ポインタ指定モード
 };
 static SystemCallInfo SMallocInfo = {  //
     C(SMallocList), SMallocList, GetMalloc2Mode};
 
 static const SystemCall AssignList[] = {
     {"assign{getassign}", "wsp", RET_HEX},
-    {"assign{makeassign}", "wssw", RET_INT},
+    {"assign{makeassign}", "wssh", RET_INT},
     {NULL, NULL, RET_INT},
     {NULL, NULL, RET_INT},
     {"assign{rassign}", "ws", RET_INT},
