@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#define VERSION "0.0.0"
+#define VERSION "1.0.0"
 #define YEAR "2025"
 
 const char Title[] =  //
