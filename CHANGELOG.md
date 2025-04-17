@@ -24,6 +24,7 @@
   * モードごとに引数が異なるDOSコールにおいて、モード値のマスクをHuman68kと同一となるよう改善。
   * `DOS _IOCTRL`のMD=12、13の表記をそれぞれ`ioctrl{fdctl}`、`ioctrl{dvctl}`に修正。
   * `DOS _S_MALLOC`のMD=$800xに対応。
+  * `DOS _KFLLUSH`のMODE=0の扱いを未定義コールに変更。
 
 * DOSコールのエラーコード
   * DOSコールのエラーコード-34、-35、-80に対応。

@@ -303,7 +303,7 @@ static unsigned int GetModeWord(const void* arg) {
 }
 
 static const SystemCall KflushList[] = {
-    {"kflush", "h", RET_INT},       //
+    {NULL, NULL, RET_INT},          //
     {"kflush{gp}", "h", RET_INT},   //
     {NULL, NULL, RET_INT},          //
     {NULL, NULL, RET_INT},          //
