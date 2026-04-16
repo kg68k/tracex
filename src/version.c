@@ -1,5 +1,5 @@
 // version definition
-// Copyright (C) 2025 TcbnErik
+// Copyright (C) 2026 TcbnErik
 //
 // This file is part of tracex.
 //
@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#define VERSION "1.0.0"
-#define YEAR "2025"
+#define VERSION "1.0.1-dev"
+#define YEAR "2026"
 
 const char Title[] =  //
     "tracex " VERSION "  Copyright (C) " YEAR

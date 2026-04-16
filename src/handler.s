@@ -4,7 +4,7 @@
 *
 *	K.Abe
 
-;Copyright (C) 2025 TcbnErik
+;Copyright (C) 2026 TcbnErik
 ;
 ;This file is part of tracex.
 ;
@@ -50,13 +50,13 @@ MPU_TYPE: .equ $cbc
 .if HUMAN_VERSION.eq.0x202
 OScode_abort_check:    .equ $8176  ;アボート処理(trap #10/11)
 OScode_change_process: .equ $e168  ;プロセス切り換え
-.elseif HUMAN_VERSION.eq.0x203
+.elif HUMAN_VERSION.eq.0x203
 OScode_abort_check:    .equ $80b8
 OScode_change_process: .equ $df88
-.elseif HUMAN_VERSION.eq.0x301
+.elif HUMAN_VERSION.eq.0x301
 OScode_abort_check:    .equ $869e
 OScode_change_process: .equ $df3a
-.else HUMAN_VERSION.eq.0x302
+.elif HUMAN_VERSION.eq.0x302
 OScode_abort_check:    .equ $8740
 OScode_change_process: .equ $e050
 .else
