@@ -2,7 +2,7 @@
 //
 // Copyright (C) 1991 K.Abe
 
-// Copyright (C) 2025 TcbnErik
+// Copyright (C) 2026 TcbnErik
 //
 // This file is part of tracex.
 //
@@ -35,18 +35,21 @@ extern int isprkana(int);
 #include "syscall.h"
 #include "trace.h"
 
+#define BUFFER_SIZE 512
+#define STRING_LEN_MAX 64
+
 #ifdef ADDRESS_24BIT
 #define ADDRESS_MASK 0x00ffffff
 #else
 #define ADDRESS_MASK 0x1fffffff /* 060turbo */
 #endif
 
-static void decode_argument_by_letter(char* buffer, const char* name,
-                                      const char* argletter, const void* arg);
+static void decode_argument_by_letter(  //
+    char* buffer, const char* name, const char* argletter, const void* arg);
 
-static SystemCallReturnType format_sub(const SystemCallInfo* sub,
-                                       const void* arg, char* buffer,
-                                       const char* name) {
+static SystemCallReturnType format_sub(  //
+    const SystemCallInfo* sub, const void* arg, char* buffer,
+    const char* name) {
   const unsigned int callno = sub->getSubCallNo(arg);
   const int isValid = (callno < sub->length);
 
@@ -60,9 +63,9 @@ static SystemCallReturnType format_sub(const SystemCallInfo* sub,
   return sub->list[callno].returnType;
 }
 
-char* Format_output(unsigned int doscall, void* arg,
-                    SystemCallReturnType* retType) {
-  static char argbuf[256];
+char* Format_output(  //
+    unsigned int doscall, void* arg, SystemCallReturnType* retType) {
+  static char argbuf[BUFFER_SIZE];
   char* writeptr = argbuf;
 
   const SystemCall* dos = &HumanInfo.list[doscall];
@@ -123,7 +126,7 @@ static void escape(const char* str, char* buf, int lasciiz) {
     buf += sprintf(buf, "\\x%02x", (int)*p++);
   }
 
-  for (count = 0; *p && count < 32; count++) {
+  for (count = 0; *p && count < STRING_LEN_MAX; count++) {
     unsigned char c = *p++;
 
     if (isprkana(c)) {
