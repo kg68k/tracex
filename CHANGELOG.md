@@ -1,6 +1,6 @@
 # 変更履歴
 
-## Unreleased
+## 1.1.0 (2026-04-17)
 
 * handler.sがアセンブルエラーになるエンバグを修正。
 * `DOS _EXEC`(loadexec、load)のコマンドラインはLASCIIZ形式文字列なので、1バイト目を
