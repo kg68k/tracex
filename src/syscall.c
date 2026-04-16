@@ -476,8 +476,8 @@ static unsigned int GetExecMode(const void* arg) {
 }
 
 static const SystemCall ExecList[] = {
-    {"exec{loadexec}", "hssp", RET_INT},  //
-    {"exec{load}", "hssp", RET_PTR},      //
+    {"exec{loadexec}", "hszp", RET_INT},  // コマンドラインはLASCIIZ形式
+    {"exec{load}", "hszp", RET_PTR},      // コマンドラインはLASCIIZ形式
     {"exec{pathchk}", "hspp", RET_INT},   //
     {"exec{loadonly}", "hspp", RET_INT},  //
     {"exec{execonly}", "hp", RET_INT},    //

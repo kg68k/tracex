@@ -108,46 +108,59 @@ static char* escapeContrlCode(unsigned char c, char* buf) {
   return buf;
 }
 
-/* 文字列(またはアドレス)を表示する */
-static void escape(char* str, char* buffer) {
-  unsigned char* p = str;
+static void escape(const char* str, char* buf, int lasciiz) {
+  const unsigned char* p = str;
   int count;
 
   if (p > (unsigned char*)ADDRESS_MASK) {
-    buffer += sprintf(buffer, "(%#x)", (unsigned int)p);
+    buf += sprintf(buf, "(%#x)", (unsigned int)p);
     p = (unsigned char*)((unsigned long)p & ADDRESS_MASK);
   }
 
-  *buffer++ = '\"';
+  *buf++ = '\"';
+  if (lasciiz) {
+    // 先頭の1バイトが文字列長なので、16進数表記で出力する
+    buf += sprintf(buf, "\\x%02x", (int)*p++);
+  }
+
   for (count = 0; *p && count < 32; count++) {
     unsigned char c = *p++;
 
     if (isprkana(c)) {
       if (c == '\\' || c == '\"' || c == '\'') {
-        *buffer++ = '\\';
+        *buf++ = '\\';
       }
-      *buffer++ = c;
+      *buf++ = c;
     } else if (iscntrl(c)) {
-      buffer = escapeContrlCode(c, buffer);
+      buf = escapeContrlCode(c, buf);
     } else if (iskanji(c) && iskanji2(*p)) {
-      *buffer++ = c;
-      *buffer++ = *p++;
+      *buf++ = c;
+      *buf++ = *p++;
       count++;
     } else {
-      *buffer++ = '.';
+      *buf++ = '.';
     }
   }
-  *buffer++ = '\"';
+  *buf++ = '\"';
 
   if (*p) {
-    *buffer++ = '.';
-    *buffer++ = '.';
+    *buf++ = '.';
+    *buf++ = '.';
   }
-  *buffer++ = '\0';
+  *buf++ = '\0';
 }
 
 static const void* advance(const void* arg, int n) {
   return (const void*)((const char*)arg + n);
+}
+
+static int formatString(char* buf, const void** argptr, int lasciiz) {
+  const void* arg = *argptr;
+  unsigned int address = *(unsigned int*)arg;
+  *argptr = advance(arg, 4);
+
+  escape((const char*)address, buf, lasciiz);
+  return strlen(buf);
 }
 
 static int formatWord(char* buf, const void** argptr) {
@@ -179,10 +192,20 @@ static int formatLongHex(char* buf, const void** argptr) {
   return (v < 10) ? sprintf(buf, "%d", (int)v) : sprintf(buf, "%#x", v);
 }
 
-static void decode_argument_by_letter(char* buffer, const char* name,
-                                      const char* argletter, const void* arg) {
-  char temp[256];
+static int formatPointer(char* buf, const void** argptr) {
+  const void* arg = *argptr;
+  unsigned int address = *(unsigned int*)arg;
+  *argptr = advance(arg, 4);
 
+  if (address == 0) {
+    strcpy(buf, "NULL");
+    return strlen(buf);
+  }
+  return sprintf(buf, "%#x", address);
+}
+
+static void decode_argument_by_letter(  //
+    char* buffer, const char* name, const char* argletter, const void* arg) {
   strcpy(buffer, name);
   buffer += strlen(buffer);
 
@@ -204,23 +227,14 @@ static void decode_argument_by_letter(char* buffer, const char* name,
       case 'x':  // ロングワード値(16進数表記)
         buffer += formatLongHex(buffer, &arg);
         break;
-      case 'p': /* ポインタ */
-        if ((void*)*(long*)arg)
-          buffer += sprintf(buffer, "%#x", *(int*)arg);
-        else {
-          *buffer++ = 'N'; /* "NULL" */
-          *buffer++ = 'U';
-          *buffer++ = 'L';
-          *buffer++ = 'L';
-        }
-        arg = advance(arg, 4);
+      case 'p':  // ポインタ
+        buffer += formatPointer(buffer, &arg);
         break;
-      case 's': /* 文字列 */
-        escape((char*)*(long*)arg, temp);
-        /* buffer += sprintf (buffer, "%s", temp); */
-        strcpy(buffer, temp);
-        buffer += strlen(buffer);
-        arg = advance(arg, 4);
+      case 's':  // 文字列
+        buffer += formatString(buffer, &arg, 0);
+        break;
+      case 'z':  // 文字列(LASCIIZ形式)
+        buffer += formatString(buffer, &arg, 1);
         break;
       default:
         goto exit;
