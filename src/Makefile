@@ -4,10 +4,6 @@ ifeq ($(notdir $(CURDIR)),src)
 $(error do not execute make in src directory)
 endif
 
-SRCDIR_MK = ../srcdir.mk
-SRC_DIR = ../src
--include $(SRCDIR_MK)
-
 AS = has060
 ASFLAGS = -w3
 CC = gcc2
@@ -39,7 +35,15 @@ syscall.o: syscall.h
 error.o: error.h
 
 
+ifdef SRC_DIR
 archive: $(ARCHIVE_ZIP)
+else
+archive: ../srcdir.txt
+	$(if $(SRC_DIR_IS_DEFINED),$(error SRC_DIR is empty.))
+	make $@ SRC_DIR_IS_DEFINED=yes SRC_DIR=$(shell cat ../srcdir.txt)
+../srcdir.txt:
+	$(error file 'srcdir.txt' created by src2build is required.)
+endif
 
 $(ARCHIVE_ZIP): $(DOCS) $(TARGET)
 	strip $(TARGET)
@@ -52,7 +56,7 @@ $(ARCHIVE_ZIP): $(DOCS) $(TARGET)
 
 LICENSE: $(SRC_DIR)/../LICENSE
 	rm -f $@
-	cp $< $@
+	cp -p $< $@
 
 
 clean:
